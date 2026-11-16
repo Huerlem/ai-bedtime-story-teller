@@ -43,12 +43,18 @@ export async function POST(req) {
 
 
 import { NextResponse } from 'next/server';
+import { requireParent } from '@/lib/server/requireParent';
+export const runtime = 'nodejs';
 
 // Using Grop (free)
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
 export async function POST(request) {
+  const denied = await requireParent(request);
+  if (denied) return denied;
+  const size = Number(request.headers.get('content-length'));
+  if (Number.isFinite(size) && size > 16000) return NextResponse.json({error:'Request too large'}, {status:413});
   try {
     console.log('=== DEBUG: Iniciando geração de história ===');
     console.log('GROQ_API_KEY exists:', !!GROQ_API_KEY);
@@ -67,7 +73,10 @@ export async function POST(request) {
     console.log('=== DEBUG: Dados recebidos ===');
     console.log('Body:', JSON.stringify(body, null, 2));
     
-    const { prompt, age, length, characters, setting, mood } = body;
+    const { prompt, age, length, characters, setting, mood } = body || {};
+    if (typeof prompt !== 'string' || prompt.length > 1200 || typeof age !== 'string' || age.length > 40 || typeof mood !== 'string' || mood.length > 80 || typeof setting !== 'string' || setting.length > 300 || !(typeof characters === 'string' || Array.isArray(characters))) {
+      return NextResponse.json({error:'Invalid story parameters'}, {status:400});
+    }
 
     // Validate mandatory fields
     if (!prompt) {

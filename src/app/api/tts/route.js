@@ -1,15 +1,21 @@
 
 import { NextResponse } from "next/server";
+import { requireParent } from '@/lib/server/requireParent';
+export const runtime = 'nodejs';
 
 /**
  * Server-side API route handler for Text-to-Speech conversion
  * This approach keeps API keys secure on the server side
  */
 export async function POST(req) {
+  const denied = await requireParent(req);
+  if (denied) return denied;
+  const size = Number(req.headers.get('content-length'));
+  if (Number.isFinite(size) && size > 16000) return NextResponse.json({error:'Request too large'}, {status:413});
   try {
     const { text, voice, languageCode } = await req.json();
 
-    if (!text) {
+    if (typeof text !== 'string' || !text.trim() || text.length > 4500) {
       return NextResponse.json({ error: "Text is required" }, { status: 400 });
     }
 

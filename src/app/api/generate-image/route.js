@@ -1,7 +1,13 @@
 // app/api/generate-image/route.js
 import { NextResponse } from 'next/server';
+import { requireParent } from '@/lib/server/requireParent';
+export const runtime = 'nodejs';
 
 export async function POST(request) {
+  const denied = await requireParent(request);
+  if (denied) return denied;
+  const size = Number(request.headers.get('content-length'));
+  if (Number.isFinite(size) && size > 16000) return NextResponse.json({error:'Request too large'}, {status:413});
   console.log('=== API GENERATE IMAGE CHAMADA ===');
   
   try {
@@ -39,6 +45,8 @@ export async function POST(request) {
       'educational': '#20B2AA'
     };
 
+    if (typeof prompt !== 'string' || prompt.length > 300 || typeof mood !== 'string' || mood.length > 40 || typeof characters !== 'string' || typeof setting !== 'string' || characters.length > 300 || setting.length > 300) return NextResponse.json({error:'Invalid parameters'}, {status:400});
+    const xml = v => String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
     const bgColor = colors[mood.toLowerCase()] || '#FFD700';
     const textColor = '#2C3E50';
     
@@ -75,22 +83,22 @@ export async function POST(request) {
         
         <!-- Title -->
         <text x="256" y="280" font-size="24" text-anchor="middle" font-family="Arial" fill="${textColor}" font-weight="bold">
-          ${prompt.substring(0, 20)}
+          ${xml(prompt.substring(0, 20))}
         </text>
         
         <!-- Characters -->
         ${characters ? `<text x="256" y="320" font-size="18" text-anchor="middle" font-family="Arial" fill="${textColor}">
-          Characters: ${characters.substring(0, 25)}
+          Characters: ${xml(characters.substring(0, 25))}
         </text>` : ''}
         
         <!-- Setting -->
         ${setting ? `<text x="256" y="350" font-size="16" text-anchor="middle" font-family="Arial" fill="${textColor}">
-          Setting: ${setting.substring(0, 30)}
+          Setting: ${xml(setting.substring(0, 30))}
         </text>` : ''}
         
         <!-- Mood -->
         <text x="256" y="400" font-size="16" text-anchor="middle" font-family="Arial" fill="${textColor}" font-style="italic">
-          Mood: ${mood}
+          Mood: ${xml(mood)}
         </text>
         
         <!-- Decorative elements -->

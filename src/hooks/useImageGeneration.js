@@ -1,3 +1,4 @@
+import { secureFetch } from '@/lib/client/secureFetch';
 import { useState } from 'react';
 
 const useImageGeneration = () => {
@@ -28,7 +29,7 @@ const useImageGeneration = () => {
       console.log('📝 Analyzed and enhanced data:', enhancedData);
 
       // 📡 API REQUEST TO ENHANCED ENDPOINT
-      const response = await fetch('/api/generate-image', {
+      const response = await secureFetch('/api/generate-image', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

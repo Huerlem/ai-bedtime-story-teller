@@ -1,3 +1,4 @@
+import { secureFetch } from '@/lib/client/secureFetch';
 import { useState } from 'react';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '@/firebase/firebaseConfig';
@@ -57,7 +58,7 @@ const useTextToSpeech = ({ apiKey, apiEndpoint }) => {
 
       // Instead of using the external API directly, use our API route 
       // This will handle the API key and credentials securely on the server side
-      const response = await fetch('/api/tts', {
+      const response = await secureFetch('/api/tts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -135,35 +136,7 @@ const useTextToSpeech = ({ apiKey, apiEndpoint }) => {
       } catch (storageError) {
         console.error('Storage error:', storageError);
         
-        // If we have storage permission issues, try to use the server API again
-        // This is a fallback approach
-        try {
-          console.log('Attempting fallback to server-side storage...');
-          
-          // Call a server endpoint that can write to Firebase with admin privileges
-          const serverResponse = await fetch('/api/upload-audio', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              audioContent: audioContent,
-              userId: userId,
-              storyId: storyId
-            })
-          });
-          
-          if (!serverResponse.ok) {
-            throw new Error(`Server upload failed: ${serverResponse.status}`);
-          }
-          
-          const data = await serverResponse.json();
-          console.log('Successfully uploaded via server side:', data.downloadURL);
-          return data.downloadURL;
-        } catch (serverError) {
-          console.error('Server upload fallback error:', serverError);
-          throw new Error('Failed to upload audio after multiple attempts');
-        }
+        throw storageError;
       }
     } catch (err) {
       console.error('Error converting text to speech:', err);
