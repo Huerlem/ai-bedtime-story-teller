@@ -19,8 +19,7 @@ import SuccessMessage from '@/components/common/SuccessMessage';
  * Edit Story page component
  * 
  * @param {Object} props - Component props
- * @param {Object} props.params - Route parameters
- * @param {string} props.params.id - Story ID
+ * @param {Promise<{id: string}>} props.params - Next.js 15 async route parameters
  * @returns {JSX.Element} Edit Story page
  */
 export default function EditStory({ params }) {
