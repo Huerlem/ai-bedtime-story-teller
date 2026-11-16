@@ -1,0 +1,30 @@
+name: Dream Tales V2 — baseline checks
+
+on:
+  push:
+    branches:
+      - feature/dream-tales-v2
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  node-unit-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run isolated story-input unit tests
+        run: node --test tests/*.test.mjs
+      - name: Confirm no private local environment file is tracked
+        run: |
+          if git ls-files | grep -E '(^|/)\.env\.local$|(^|/)firebase-adminsdk[^/]*\.json$|(^|/)service-account[^/]*\.json$'; then
+            echo "Private configuration is tracked. Remove it from version control."
+            exit 1
+          fi
