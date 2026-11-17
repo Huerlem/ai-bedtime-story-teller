@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import PrivacyAndSafetyPanel from '@/components/account/PrivacyAndSafetyPanel';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
@@ -557,6 +558,7 @@ export default function Settings() {
               </div>
             </div>
           )}
+          <PrivacyAndSafetyPanel />
         </main>
         
         <Footer />
