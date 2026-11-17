@@ -28,7 +28,7 @@ export function greetingFor(date = new Date()) {
 }
 
 export default function ParentDashboardView({
-  firstName, greeting, pendingReviews = 0, children = [], stories = [], videoStudioAvailable = false,
+  firstName, greeting, pendingReviews = 0, familyChildren = [], stories = [], videoStudioAvailable = false,
 }) {
   return (
     <div className="mx-auto min-h-[100dvh] w-full max-w-[430px] bg-dt-canvas pb-[112px] pt-[max(47px,env(safe-area-inset-top))] text-[#1F1D4A]">
@@ -72,7 +72,7 @@ export default function ParentDashboardView({
       <section aria-labelledby="children-heading" className="mt-[36px]">
         <h2 id="children-heading" className="px-[25px] text-[18px] font-extrabold leading-6 text-[#1F1D4A]">My Children</h2>
         <ul className="mt-[18px] flex overflow-x-auto px-[18px] [scrollbar-width:none]">
-          {children.map((child) => (
+          {familyChildren.map((child) => (
             <li key={child.id} className="w-[121px] shrink-0">
               <Link href={`/my-children?child=${encodeURIComponent(child.id)}`} className="flex flex-col items-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-dt-violet">
                 <span className="flex h-[92px] w-[92px] items-center justify-center overflow-hidden rounded-full bg-[#E3DDFB] text-[34px] font-extrabold text-dt-violet">

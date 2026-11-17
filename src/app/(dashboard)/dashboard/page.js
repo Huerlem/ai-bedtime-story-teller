@@ -46,7 +46,7 @@ export default function ParentDashboardPage() {
       firstName={firstName}
       greeting={greetingFor()}
       pendingReviews={pendingReviews}
-      children={children}
+      familyChildren={children}
       stories={stories}
       videoStudioAvailable={false}
     />
