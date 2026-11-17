@@ -112,11 +112,9 @@ const useTextToSpeech = ({ apiKey, apiEndpoint }) => {
         // Create a reference to the specific path in Firebase Storage
         const storageRef = ref(storage, `audio/${userId}/${storyId}.mp3`);
         
-        // Log the storage path for debugging
-        console.log(`Uploading to storage path: audio/${userId}/${storyId}.mp3`);
-        
         // Upload the file with metadata that includes the user's ID
         await uploadBytes(storageRef, blob, {
+          contentType: 'audio/mpeg',
           customMetadata: {
             userId: userId,
             storyId: storyId
@@ -128,7 +126,7 @@ const useTextToSpeech = ({ apiKey, apiEndpoint }) => {
         // Get the download URL
         const downloadURL = await getDownloadURL(storageRef);
         
-        console.log('Successfully uploaded and got download URL:', downloadURL);
+        // Do not log downloadURL: it embeds a bearer token for the private file.
 
         setProgress(100);
 
