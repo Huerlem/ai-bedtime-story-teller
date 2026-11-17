@@ -71,9 +71,8 @@ export const AuthProvider = ({ children }) => {
         try {
             await logoutUser();
             
-            // Remove cookie
+            // Clear any legacy role cookie written by older builds.
             document.cookie = 'user=;Max-Age=0; path=/';
-            console.log('🍪 Cookie removed due to inactivity');
             
             // Clear user state
             setUser(null);
@@ -172,10 +171,9 @@ export const AuthProvider = ({ children }) => {
     };
 
     // Register a new user
-    const register = async (email, password, displayName, role, familyId) => {
+    const register = async (email, password, displayName) => {
         try {
-            console.log('📝 Registering user:', { email, displayName, role, familyId });
-            const newUser = await registerUser(email, password, displayName, role, familyId);
+            const newUser = await registerUser(email, password, displayName);
             return newUser;
         } catch (error) {
             console.error('❌ Register error:', error);
@@ -186,23 +184,11 @@ export const AuthProvider = ({ children }) => {
     // Log in a user
     const login = async (email, password) => {
         try {
-            console.log('🔐 Logging in user:', email);
             const user = await loginUser(email, password);
 
-            console.log('🔍 LOGIN FUNCTION DEBUG:');
-            console.log('- loginUser() returned:', user);
-            console.log('- User role from login:', user?.role);
-            console.log('- User email:', user?.email);
-            console.log('- User UID:', user?.uid);
-
-            // Save cookie
-            document.cookie = `user=${JSON.stringify({
-                role: user.role,
-                email: user.email,
-            })}; path=/`;
-            
-            console.log('🍪 Cookie saved with role:', user.role);
-            
+            // No role cookie is written: routing hints from the browser are never an
+            // authorization boundary. Server routes verify Firebase ID tokens and
+            // Firestore/Storage rules enforce family ownership.
             return user;
         } catch (error) {
             console.error('❌ Login error:', error);
@@ -221,9 +207,8 @@ export const AuthProvider = ({ children }) => {
             
             await logoutUser();
 
-            // Remove cookie
+            // Clear any legacy role cookie written by older builds.
             document.cookie = 'user=;Max-Age=0; path=/';
-            console.log('🍪 Cookie removed');
             
             router.push('/login');
         } catch (error) {

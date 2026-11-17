@@ -8,7 +8,6 @@ import {
     updatePassword,
     EmailAuthProvider,
     reauthenticateWithCredential,
-    fetchSignInMethodsForEmail
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from './firebaseConfig';
@@ -19,29 +18,25 @@ import { auth, db } from './firebaseConfig';
  * @param {string} email - User email
  * @param {string} password - User password
  * @param {string} displayName - User display name
- * @param {string} role - User role ('parent' or 'child')
- * @param {string} [familyId] - Family ID for child role (optional for parent)
  * @returns {Promise<Object>} User object
  */
-export const registerUser = async (email, password, displayName, role, familyId) => {
+export const registerUser = async (email, password, displayName) => {
     try {
-        //Verify if e-mail is registered already
-        const methods = await fetchSignInMethodsForEmail(auth, email);
-        if (methods.length > 0) {
-            throw new Error('The e-mail is already registered. Log in or use other e-mail, please.')
-        }
+        // Only adult account-holders can register. Children are profiles created by a
+        // parent (see createChildAccount); a client-chosen role or familyId is never
+        // accepted. Firestore rules enforce the same invariant server-side.
+        const role = 'parent';
 
-        // Create the user in Firebase Auth
+        // Create the user in Firebase Auth (fails with auth/email-already-in-use if taken;
+        // avoids the email-enumeration API fetchSignInMethodsForEmail).
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
         
         // Update the user profile with display name
         await updateProfile(user, { displayName });
         
-        // Generate a family ID for parents if not provided
-        if (role === 'parent' && !familyId) {
-            familyId = user.uid; // Use the user ID as the family ID for simplicity
-        }
+        // A parent's family is identified by their own uid.
+        const familyId = user.uid;
 
         //Verify if document already exist on Firebase
         const userRef = doc(db, 'users', user.uid);
