@@ -109,7 +109,8 @@ test('narration is stored as a private path, not a tokenised download URL', () =
   const tts = read('src/hooks/useTextToSpeech.js');
   assert.doesNotMatch(tts, /getDownloadURL/);
   assert.match(tts, /return storageRef\.fullPath;/);
-  assert.match(read('src/app/(dashboard)/create-story/page.js'), /audioPath: audioUrl \|\| null/);
+  assert.doesNotMatch(read('src/app/(dashboard)/create-story/page.js'), /getDownloadURL|audioUrl:\s*audio/);
+  assert.match(read('src/app/edit-story/[id]/page.js'), /updateData\.audioPath = audioUrl;/);
   assert.match(read('src/app/api/media/narration/route.js'), /getSignedUrl\(/);
 });
 

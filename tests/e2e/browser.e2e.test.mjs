@@ -55,6 +55,27 @@ test('Parent Dashboard renders family data (production build visual capture)', a
   await page.setViewportSize({ width: 390, height: 844 });
 });
 
+test('Create Story renders for the parent (production build visual capture)', async () => {
+  await page.goto(`${BASE}/create-story`);
+  await page.getByRole('heading', { name: 'Create a new story' }).waitFor({ timeout: 20000 });
+  await page.fill('#story-prompt', 'A friendly dragon who learns to be brave.');
+  assert.ok(await page.getByRole('button', { name: /Generate Story/ }).isEnabled());
+  for (const [w, h] of [[390, 844], [393, 852], [430, 932], [375, 667]]) {
+    await page.setViewportSize({ width: w, height: h });
+    await page.evaluate(() => document.fonts.ready);
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: `artifacts/visual/create-story-${w}x${h}.png` });
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+});
+
+test('Create Story without a provider key fails safely and keeps the idea', async () => {
+  await page.getByRole('button', { name: /Generate Story/ }).click();
+  await page.getByRole('alert').filter({ hasText: /couldn.t write the story|story limit/i }).waitFor({ timeout: 20000 });
+  assert.equal(await page.inputValue('#story-prompt'), 'A friendly dragon who learns to be brave.');
+  assert.match(page.url(), /\/create-story/);
+});
+
 test('parent enters Child Mode from profile selection', async () => {
   await page.goto(`${BASE}/kid-mode`);
   await page.getByRole('button', { name: /Emma/ }).click();
