@@ -31,6 +31,31 @@ Duplicates verified by checksum: `icon-512` = `maskable-512`; `android-chrome-51
 The README's note applies: the monochrome icon is an automated silhouette and needs a hand-traced version before
 Android launch.
 
+## A2. Premium storybook scenes — supplied 17 Nov 2026, committed
+
+Source: `Dream_Tales_V2_Premium_Illustrations_1.zip` (uploaded by the product owner). This is the package
+handoff `142:3` refers to. The files are committed **byte-identical** under `public/illustrations/story-scenes/` and
+registered in `src/lib/brandAssets.mjs`.
+
+| File | Pixels | Package README suggested use | Sharp up to (@3x) | Status |
+|---|---|---|---|---|
+| `01_Fox_Discovers_Star.jpg` | 535×724 | Parent Dashboard story cover / story discovery | 178×241 pt | COMMITTED · candidate |
+| `02_Enchanted_Forest_Path.jpg` | 527×724 | Child Dashboard featured story | 175×241 pt | COMMITTED · candidate |
+| `03_Moonlit_Valley.jpg` | 527×724 | Create Story inspiration / story scene | 175×241 pt | COMMITTED · candidate |
+| `04_Starlight_Celebration.jpg` | 535×724 | Parent Review / story finale | 178×241 pt | COMMITTED · candidate |
+
+- Their README marks them as **"candidate story art … until visually reviewed and accepted"**, so product-owner
+  acceptance is still required before release.
+- They are **different artwork from the Final Vision board.** The Final Vision shows a girl with the fox, and its
+  covers, player hero and Video Studio still are other images, which remain only inside the composite (section B).
+  These scenes do not replace those slots unless you decide they should.
+- At about 530 px wide they are sharp for card and cover slots (e.g. the 105×143 pt recent-story cover, prototype
+  `141:2`), but **not** for full-bleed player or hero backgrounds (390 pt needs ≈ 1170 px).
+
+The `DreamTales_App_Assets_iOS_Android_Web.zip` uploaded the same day was checked file by file. It is identical to
+the icon pack already in the Project and repo (36 images with the same checksums, plus README, Expo config and
+manifest) and contains no wordmark or illustration.
+
 ## B. Authentic, but only inside flattened composite boards (not production resolution)
 
 Boards: **FV** = Final Vision `50:14` (1660×934, Figma cannot render it larger); **FLOW** = `Fluxo Mágico de
@@ -60,8 +85,7 @@ explicit approval.
 
 ## C. Not found anywhere
 
-1. **The four premium storybook scenes** referenced in handoff `142:3` ("generated and packaged separately …
-   raster assets are not in Figma"). They are not in Project Knowledge, Figma or the repo.
+1. ~~The four premium storybook scenes~~ — **received 17 Nov 2026**, see A2.
 2. **Wordmark source file** (SVG/PDF/transparent PNG) and the original prompt or artwork brief behind it.
 3. **Original image-generation prompts** for any illustration (you said these are in Project Knowledge, but
    they are not there now).
@@ -82,5 +106,5 @@ Lucide as implementing the icon specification unless you object.
   thumbnails, player and approval imagery. Real stories will use generated images; the approved art defines how
   they look and is needed for the designed empty, sample and onboarding states.
 
-**To unblock:** upload to Project Knowledge (or attach) the original wordmark file and the illustration files,
+**Product decision (17 Nov 2026):** low-resolution crops from the mockups must not be used. **To unblock:** upload to Project Knowledge (or attach) the original wordmark file and the illustration files,
 ideally the 4-scene package and the source images used to build the Final Vision board.
