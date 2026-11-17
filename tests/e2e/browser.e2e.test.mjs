@@ -60,7 +60,8 @@ test('Final Vision fixture: Dashboard and Create Story captured for comparison',
   const alex = await signUpParent('Alex');
   await addChild(alex, 'Emma', 6);
   await addChild(alex, 'Lucas', 4);
-  for (const [i, title] of ['The Fox and the Starlight Forest', 'Luna and the Rainbow Bridge', "Theo's Underwater Adventure"].entries()) {
+  // Newest first on the dashboard: seed in reverse so the order matches the Final Vision.
+  for (const [i, title] of ["Theo's Underwater Adventure", 'Luna and the Rainbow Bridge', 'The Fox and the Starlight Forest'].entries()) {
     await addStory(alex, { id: `fv${i}_${alex.uid.slice(0, 6)}`, title });
   }
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, timezoneId: 'UTC' });

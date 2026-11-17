@@ -39,10 +39,10 @@ export default function ParentDashboardView({
     <div className="mx-auto min-h-[100dvh] w-full max-w-[430px] bg-dt-canvas pb-[112px] pt-[max(47px,env(safe-area-inset-top))] text-[#1F1D4A]">
       <header className="flex items-start justify-between px-[25px] pt-[45px]">
         <div>
-          <h1 className="text-[26px] font-extrabold leading-[30px] tracking-[-0.2px] text-[#1F1D4A]">
+          <h1 className="text-[28px] font-extrabold leading-[32px] tracking-[-0.2px] text-[#1F1D4A]">
             {greeting}{firstName ? `, ${firstName}` : ''}!
           </h1>
-          <p className="mt-[13px] text-[16px] font-semibold leading-[22px] text-[#6E6C8F]">Let&apos;s create something amazing.</p>
+          <p className="mt-[11px] text-[18.5px] font-semibold leading-[24px] text-[#6E6C8F]">Let&apos;s create something amazing.</p>
         </div>
         <Link
           href="/my-stories?status=review_required"
@@ -54,28 +54,28 @@ export default function ParentDashboardView({
         </Link>
       </header>
 
-      <section aria-label="Create" className="mt-[30px] grid grid-cols-2 gap-[16px] px-[25px]">
+      <section aria-label="Create" className="mt-[28px] grid grid-cols-2 gap-[16px] px-[25px]">
         <Link href="/create-story" className="flex h-[122px] flex-col items-center justify-center rounded-[18px] bg-[#EDDEFD] focus-visible:outline focus-visible:outline-2 focus-visible:outline-dt-violet">
           <span className="flex h-[42px] w-[42px] items-center justify-center rounded-[11px] bg-[linear-gradient(135deg,#D44DE8_0%,#9B3FE0_100%)] text-white shadow-[0_4px_10px_rgba(180,70,230,0.35)]" aria-hidden="true">
             <Feather size={24} strokeWidth={2.2} />
           </span>
-          <span className="mt-[18px] text-[16px] font-bold leading-5">Create Story</span>
+          <span className="mt-[17px] text-[18px] font-bold leading-[22px]">Create Story</span>
         </Link>
         {videoStudioAvailable ? (
           <Link href="/video-studio" className="flex h-[122px] flex-col items-center justify-center rounded-[18px] bg-dt-periwinkle focus-visible:outline focus-visible:outline-2 focus-visible:outline-dt-violet">
             <VideoGlyph />
-            <span className="mt-[18px] text-[16px] font-bold leading-5">Create Video</span>
+            <span className="mt-[17px] text-[18px] font-bold leading-[22px]">Create Video</span>
           </Link>
         ) : (
           <div aria-disabled="true" title="Video Studio is not available yet" className="flex h-[122px] flex-col items-center justify-center rounded-[18px] bg-dt-periwinkle opacity-60">
             <VideoGlyph />
-            <span className="mt-[18px] text-[16px] font-bold leading-5">Create Video</span>
+            <span className="mt-[17px] text-[18px] font-bold leading-[22px]">Create Video</span>
           </div>
         )}
       </section>
 
       <section aria-labelledby="children-heading" className="mt-[36px]">
-        <h2 id="children-heading" className="px-[25px] text-[18px] font-extrabold leading-6 text-[#1F1D4A]">My Children</h2>
+        <h2 id="children-heading" className="px-[25px] text-[18.5px] font-extrabold leading-6 text-[#1F1D4A]">My Children</h2>
         <ul className="mt-[18px] flex overflow-x-auto px-[18px] [scrollbar-width:none]">
           {familyChildren.map((child) => (
             <li key={child.id} className="w-[121px] shrink-0">
@@ -110,8 +110,8 @@ export default function ParentDashboardView({
 
       <section aria-labelledby="recent-heading" className="mt-[21px]">
         <div className="flex items-baseline justify-between px-[25px]">
-          <h2 id="recent-heading" className="text-[18px] font-extrabold leading-6 text-[#1F1D4A]">Recent Stories</h2>
-          <Link href="/my-stories" className="text-[16px] font-semibold text-[#6E6C8F] focus-visible:outline focus-visible:outline-2 focus-visible:outline-dt-violet">See all</Link>
+          <h2 id="recent-heading" className="text-[18.5px] font-extrabold leading-6 text-[#1F1D4A]">Recent Stories</h2>
+          <Link href="/my-stories" className="text-[18px] font-semibold text-[#6E6C8F] focus-visible:outline focus-visible:outline-2 focus-visible:outline-dt-violet">See all</Link>
         </div>
         {stories.length === 0 ? (
           <p className="mt-[14px] px-[25px] text-[15px] text-[#6E6C8F]">Your stories will appear here.</p>
@@ -126,7 +126,7 @@ export default function ParentDashboardView({
                       // eslint-disable-next-line @next/next/no-img-element
                       ? <img src={cover.src} alt={cover.alt} width={135} height={95} className="h-[95px] w-[135px] rounded-[10px] object-cover" />
                       : <PendingCover />}
-                    <span className="mt-[8px] line-clamp-2 text-[14px] font-bold leading-[21px] text-[#2B2950]">{story.title}</span>
+                    <span className="mt-[8px] line-clamp-2 text-[13.5px] font-bold leading-[21px] text-[#2B2950]">{story.title}</span>
                   </Link>
                 </li>
               );

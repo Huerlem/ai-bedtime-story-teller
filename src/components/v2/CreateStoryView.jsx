@@ -21,15 +21,15 @@ export default function CreateStoryView({
         <button type="button" onClick={onBack} aria-label="Back" className="-ml-[11px] flex h-11 w-11 items-center justify-center text-[#1F1D4A] focus-visible:outline focus-visible:outline-2 focus-visible:outline-dt-violet">
           <ChevronLeft size={28} strokeWidth={2.4} aria-hidden="true" />
         </button>
-        <h1 className="ml-[17px] text-[21px] font-extrabold leading-7 text-[#1F1D4A]">Create a new story</h1>
+        <h1 className="ml-[17px] text-[23px] font-extrabold leading-7 text-[#1F1D4A]">Create a new story</h1>
       </div>
 
       <div role="tablist" aria-label="What to create" className="mt-[23px] grid h-[55px] grid-cols-2 rounded-[20px] bg-[#E4E1FA] p-[5px]">
-        <button type="button" role="tab" aria-selected="true" className="rounded-[16px] bg-[#F3F1FF] text-[17px] font-bold text-dt-violet shadow-[0_2px_8px_rgba(80,70,180,0.12)]">Story</button>
-        <button type="button" role="tab" aria-selected="false" disabled={!videoAvailable} title={videoAvailable ? undefined : 'Video Studio is not available yet'} className="rounded-[16px] text-[17px] font-bold text-[#1F1D4A] disabled:opacity-60">Video</button>
+        <button type="button" role="tab" aria-selected="true" className="rounded-[16px] bg-[#F3F1FF] text-[18.5px] font-bold text-dt-violet shadow-[0_2px_8px_rgba(80,70,180,0.12)]">Story</button>
+        <button type="button" role="tab" aria-selected="false" disabled={!videoAvailable} title={videoAvailable ? undefined : 'Video Studio is not available yet'} className="rounded-[16px] text-[18.5px] font-bold text-[#1F1D4A] disabled:opacity-60">Video</button>
       </div>
 
-      <label htmlFor="story-prompt" className="mt-[34px] block text-[17px] font-extrabold leading-6">What&apos;s the story about?</label>
+      <label htmlFor="story-prompt" className="mt-[34px] block text-[18.5px] font-extrabold leading-6">What&apos;s the story about?</label>
       <textarea
         id="story-prompt"
         value={prompt}
@@ -37,17 +37,17 @@ export default function CreateStoryView({
         maxLength={1200}
         disabled={busy}
         placeholder="A friendly dragon who learns to be brave."
-        className="mt-[6px] h-[100px] w-full resize-none rounded-[14px] border border-[#E6E3F5] bg-white px-[16px] py-[13px] text-[19px] font-semibold leading-[32px] text-[#2B2950] placeholder:text-[#9C99BC] focus:border-dt-violet focus:outline-none focus:ring-2 focus:ring-dt-violet/25"
+        className="mt-[6px] h-[100px] w-full resize-none rounded-[14px] border border-[#E6E3F5] bg-white px-[16px] py-[13px] text-[20px] font-semibold leading-[32px] text-[#2B2950] placeholder:text-[#9C99BC] focus:border-dt-violet focus:outline-none focus:ring-2 focus:ring-dt-violet/25"
       />
 
-      <label htmlFor="age-range" className="mt-[26px] block text-[17px] font-extrabold leading-6">Age range</label>
+      <label htmlFor="age-range" className="mt-[26px] block text-[18.5px] font-extrabold leading-6">Age range</label>
       <div className="relative mt-[13px]">
         <select
           id="age-range"
           value={age}
           onChange={(e) => onAgeChange(e.target.value)}
           disabled={busy}
-          className="h-[51px] w-full appearance-none bg-none rounded-[14px] border border-[#E6E3F5] bg-white pl-[18px] pr-12 text-[19px] font-semibold text-[#2B2950] focus:border-dt-violet focus:outline-none focus:ring-2 focus:ring-dt-violet/25"
+          className="h-[51px] w-full appearance-none bg-none rounded-[14px] border border-[#E6E3F5] bg-white pl-[18px] pr-12 text-[20px] font-semibold text-[#2B2950] focus:border-dt-violet focus:outline-none focus:ring-2 focus:ring-dt-violet/25"
         >
           {AGE_RANGES.map((a) => <option key={a} value={a}>{a}</option>)}
         </select>
@@ -60,7 +60,7 @@ export default function CreateStoryView({
         type="button"
         onClick={onGenerate}
         disabled={!canGenerate}
-        className="mt-auto flex h-[69px] w-full items-center justify-center gap-2 rounded-full bg-dt-primary text-[20px] font-bold text-white shadow-[0_8px_20px_rgba(115,100,246,0.35)] disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-dt-violet"
+        className="mt-auto flex h-[69px] w-full items-center justify-center gap-2 rounded-full bg-dt-primary text-[22px] font-bold text-white shadow-[0_8px_20px_rgba(115,100,246,0.35)] disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-dt-violet"
       >
         {busy ? (
           <><LoaderCircle size={22} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> Writing your story…</>
