@@ -35,7 +35,10 @@ test('App Router icon files are the approved pack, not Next.js defaults', () => 
 
 test('UI font is Nunito, self-hosted; no third-party font requests or legacy brand', () => {
   const layout = read('src/app/layout.js').toString();
-  assert.match(layout, /Nunito\(/);
+  assert.match(layout, /next\/font\/local/);
+  assert.match(layout, /Nunito-VariableFont_wght\.ttf/);
+  assert.doesNotMatch(layout, /next\/font\/google/);
+  assert.ok(existsSync('src/app/fonts/Nunito-OFL.txt'), 'OFL licence ships with the font');
   assert.doesNotMatch(layout, /Poppins|AI Bedtime Story|aibedtimestory\.com/);
   const css = read('src/styles/globals.css').toString();
   assert.doesNotMatch(css, /fonts\.googleapis\.com/);
@@ -45,4 +48,9 @@ test('UI font is Nunito, self-hosted; no third-party font requests or legacy bra
 test('asset inventory documents committed, composite-only and missing artwork', () => {
   const inv = read('docs/ASSET_INVENTORY.md').toString();
   for (const s of ['COMMITTED', 'COMPOSITE-ONLY', 'NOT FOUND', 'wordmark', 'four premium storybook scenes']) assert.ok(inv.includes(s), s);
+});
+
+test('Create Story select shows only the Lucide chevron (forms-plugin arrow suppressed)', () => {
+  const view = read('src/components/v2/CreateStoryView.jsx').toString();
+  assert.match(view, /<select[\s\S]*?appearance-none bg-none/);
 });

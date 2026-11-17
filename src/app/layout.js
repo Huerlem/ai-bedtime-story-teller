@@ -1,15 +1,19 @@
-import { Nunito } from 'next/font/google';
+import localFont from 'next/font/local';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { FamilyProvider } from '@/contexts/FamilyContext';
 import '@/styles/globals.css';
 
 // Design System V2 (Figma 2:53, 50:4): Nunito for all interface text. The DreamTales
 // logotype is artwork and is never typeset with this or any other font.
-const nunito = Nunito({
-  subsets: ['latin'],
-  weight: ['400', '600', '700', '800'],
+// Bundled from the official google/fonts repository (ofl/nunito, SIL OFL 1.1 — see
+// ./fonts/Nunito-OFL.txt) so builds never depend on fetching from Google Fonts.
+const nunito = localFont({
+  src: './fonts/Nunito-VariableFont_wght.ttf',
+  weight: '200 1000',
+  style: 'normal',
   display: 'swap',
   variable: '--font-nunito',
+  fallback: ['ui-rounded', 'system-ui', 'sans-serif'],
 });
 
 export default function RootLayout({ children }) {

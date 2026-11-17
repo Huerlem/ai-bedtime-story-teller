@@ -47,7 +47,7 @@ export default function CreateStoryView({
           value={age}
           onChange={(e) => onAgeChange(e.target.value)}
           disabled={busy}
-          className="h-[51px] w-full appearance-none rounded-[14px] border border-[#E6E3F5] bg-white pl-[18px] pr-12 text-[19px] font-semibold text-[#2B2950] focus:border-dt-violet focus:outline-none focus:ring-2 focus:ring-dt-violet/25"
+          className="h-[51px] w-full appearance-none bg-none rounded-[14px] border border-[#E6E3F5] bg-white pl-[18px] pr-12 text-[19px] font-semibold text-[#2B2950] focus:border-dt-violet focus:outline-none focus:ring-2 focus:ring-dt-violet/25"
         >
           {AGE_RANGES.map((a) => <option key={a} value={a}>{a}</option>)}
         </select>
