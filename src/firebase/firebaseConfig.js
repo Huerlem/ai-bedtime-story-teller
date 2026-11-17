@@ -1,8 +1,8 @@
 'use client';
 import { initializeApp, getApp, getApps } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
+import { getAuth, connectAuthEmulator } from 'firebase/auth';
+import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
+import { getStorage, connectStorageEmulator } from 'firebase/storage';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -17,4 +17,13 @@ const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
+
+// Local/CI end-to-end testing only: connect to the Firebase Emulator Suite when the build was
+// made with NEXT_PUBLIC_FIREBASE_USE_EMULATORS=true. Never set this flag for a deployed build.
+if (process.env.NEXT_PUBLIC_FIREBASE_USE_EMULATORS === 'true' && typeof window !== 'undefined' && !globalThis.__dtEmulatorsConnected) {
+  globalThis.__dtEmulatorsConnected = true;
+  connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+  connectFirestoreEmulator(db, '127.0.0.1', 8080);
+  connectStorageEmulator(storage, '127.0.0.1', 9199);
+}
 export { app, auth, db, storage };

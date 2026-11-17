@@ -35,6 +35,12 @@ export async function GET(request) {
   const path = narrationPath(story);
   if (!path) return notFound();
 
+  if (process.env.FIREBASE_STORAGE_EMULATOR_HOST) {
+    // Emulator Suite has no URL signing; the authorisation decision above is what is tested.
+    const host = process.env.FIREBASE_STORAGE_EMULATOR_HOST;
+    const url = `http://${host}/v0/b/${adminBucket().name}/o/${encodeURIComponent(path)}?alt=media`;
+    return NextResponse.json({ url, expiresIn: SIGNED_URL_TTL_SECONDS, emulator: true }, { headers: NO_STORE });
+  }
   const [url] = await adminBucket().file(path).getSignedUrl({
     version: 'v4', action: 'read', expires: Date.now() + SIGNED_URL_TTL_SECONDS * 1000,
   });
