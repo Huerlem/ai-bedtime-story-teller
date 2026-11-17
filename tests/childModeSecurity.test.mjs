@@ -142,3 +142,13 @@ test('Parent Gate title is explicitly white (legacy global h1 colour must not le
   const ui = read('src/components/childmode/ParentGate.jsx');
   assert.match(ui, /<h1 className="[^"]*text-white[^"]*">Parental Verification<\/h1>/);
 });
+
+test('Parent Dashboard uses only registered artwork and redirects non-parents', () => {
+  const view = read('src/components/v2/ParentDashboardView.jsx');
+  assert.match(view, /STORY_SCENES\.foxDiscoversStar\.src/);
+  assert.doesNotMatch(view, /\p{Extended_Pictographic}/u, 'no emoji in the UI');
+  assert.doesNotMatch(view, /data:image\/svg/);
+  const page = read('src/app/(dashboard)/dashboard/page.js');
+  assert.match(page, /user\.role !== 'parent'/);
+  assert.match(page, /router\.replace\(user\?\.childMode \? '\/kid\/dashboard' : '\/login'\)/);
+});

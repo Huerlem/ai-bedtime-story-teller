@@ -3,6 +3,7 @@
 import test, { after, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
+import { mkdirSync } from 'node:fs';
 import { addChild, addStory, api, BASE, closeClients, idToken, PASSWORD, signUpParent } from './helpers.mjs';
 
 let browser; let page; let P; let kid; const PIN = '5072';
@@ -12,6 +13,7 @@ const DRAFT = 'Unreviewed Draft Story';
 before(async () => {
   P = await signUpParent('browserParent');
   kid = await addChild(P, 'Emma', 6);
+  await addChild(P, 'Lucas', 4);
   const approved = await addStory(P, { id: `b1_${P.uid.slice(0, 6)}`, title: APPROVED, childId: kid });
   await addStory(P, { id: `b2_${P.uid.slice(0, 6)}`, title: DRAFT, childId: kid });
   assert.equal((await api('/api/parent-gate/pin', { token: await idToken(P), method: 'POST', body: { pin: PIN } })).status, 200);
@@ -36,6 +38,21 @@ test('parent signs in through the real login page', async () => {
   await page.fill('#password', PASSWORD);
   await page.click('button[type="submit"]');
   await page.waitForURL(/\/dashboard/, { timeout: 20000 });
+});
+
+test('Parent Dashboard renders family data (production build visual capture)', async () => {
+  await page.getByRole('heading', { level: 1, name: /Good (morning|afternoon|evening)/ }).waitFor({ timeout: 20000 });
+  await page.getByText('Lucas').first().waitFor();
+  await page.getByText(APPROVED).first().waitFor();
+  assert.ok(await page.getByRole('link', { name: /Create Story/ }).isVisible());
+  mkdirSync('artifacts/visual', { recursive: true });
+  for (const [w, h] of [[390, 844], [393, 852], [430, 932], [375, 667]]) {
+    await page.setViewportSize({ width: w, height: h });
+    await page.evaluate(() => document.fonts.ready);
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: `artifacts/visual/dashboard-${w}x${h}.png` });
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
 });
 
 test('parent enters Child Mode from profile selection', async () => {
