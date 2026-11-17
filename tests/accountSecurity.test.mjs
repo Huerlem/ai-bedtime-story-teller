@@ -46,3 +46,14 @@ test('Storage rules exist with no public paths', () => {
   assert.doesNotMatch(rules, /allow read(, write)?\s*:\s*if true/);
   assert.doesNotMatch(rules, /allow read:\s*if request\.auth != null;/);
 });
+
+test('framework versions are on maintained, patched release lines', () => {
+  const pkg = JSON.parse(read('package.json'));
+  const minor = (range) => range.replace(/^[~^]/, '').split('.').map(Number);
+  const [nMaj, nMin, nPatch] = minor(pkg.dependencies.next);
+  // 15.1.x is unmaintained; all published 15.x advisories are fixed from 15.5.18.
+  assert.ok(nMaj > 15 || (nMaj === 15 && (nMin > 5 || (nMin === 5 && nPatch >= 18))), `next ${pkg.dependencies.next}`);
+  const [rMaj, rMin, rPatch] = minor(pkg.dependencies.react);
+  assert.ok(rMaj === 19 && (rMin > 2 || (rMin === 2 && rPatch >= 6)), `react ${pkg.dependencies.react}`);
+  assert.equal(pkg.dependencies.react, pkg.dependencies['react-dom']);
+});
