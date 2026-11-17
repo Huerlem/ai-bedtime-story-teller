@@ -70,3 +70,8 @@ test('dependencies are locked and CI installs them reproducibly with a security 
   assert.match(build, /npm audit --omit=dev --audit-level=high/);
   assert.doesNotMatch(read('.github/workflows/dream-tales-validation.yml'), /npm install/);
 });
+
+test('no hard-coded demo credentials ship in the app', () => {
+  const login = read('src/app/login/page.js');
+  assert.doesNotMatch(login, /password123|Quick Test Logins|quickLogin/);
+});

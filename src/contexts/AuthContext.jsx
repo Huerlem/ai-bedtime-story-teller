@@ -254,6 +254,9 @@ export const AuthProvider = ({ children }) => {
     // Listen for auth state changes
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
+            // Identity is changing (sign-in, Child Mode entry/exit, sign-out): hold rendering
+            // until the new user is resolved so no page acts on the previous identity.
+            setLoading(true);
             try {
                 
                 if (authUser) {

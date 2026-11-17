@@ -41,7 +41,9 @@ test('parent signs in through the real login page', async () => {
 });
 
 test('Parent Dashboard renders family data (production build visual capture)', async () => {
-  await page.getByRole('heading', { level: 1, name: /Good (morning|afternoon|evening)/ }).waitFor({ timeout: 20000 });
+  try {
+    await page.getByRole('heading', { level: 1, name: /Good (morning|afternoon|evening)/ }).waitFor({ timeout: 20000 });
+  } catch (err) { await diagnose('dashboard'); throw err; }
   await page.getByText('Lucas').first().waitFor();
   await page.getByText(APPROVED).first().waitFor();
   assert.ok(await page.getByRole('link', { name: /Create Story/ }).isVisible());

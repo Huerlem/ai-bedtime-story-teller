@@ -22,26 +22,6 @@ export default function Login() {
   const { login } = useAuth();
   const router = useRouter();
 
-  /**
-   * 🎯 QUICK LOGIN FUNCTION for test buttons
-   */
-  const quickLogin = async (userType) => {
-    const credentials = {
-      child: { email: 'bertie-kid@gmail.com', password: 'password123' },
-      parent: { email: 'john@gmail.com', password: 'password123' }
-    };
-    
-    const cred = credentials[userType];
-    if (cred) {
-      setEmail(cred.email);
-      setPassword(cred.password);
-      
-      // Auto-submit after setting credentials
-      setTimeout(async () => {
-        await handleLogin(cred.email, cred.password);
-      }, 100);
-    }
-  };
 
   /**
    * 🔧 EXTRACTED LOGIN LOGIC for reuse - FIXED redirection
@@ -188,50 +168,6 @@ export default function Login() {
             </p>
           </div>
           
-          {/* 🧪 DEMO CREDENTIALS with functional buttons - UPDATED descriptions */}
-          <div className="mt-8 pt-6 border-t border-gray-200">
-            <p className="text-sm text-center text-gray-600 mb-4">
-              🧪 Quick Test Logins:
-            </p>
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              <button
-                onClick={() => quickLogin('parent')}
-                disabled={isLoading}
-                className="bg-blue-50 hover:bg-blue-100 border border-blue-200 p-3 rounded-md transition-colors disabled:opacity-50"
-                title="Login as parent - redirects to dashboard"
-              >
-                <p className="text-xs font-medium text-blue-600 mb-1">👨‍👩‍👧‍👦 Parent Login</p>
-                <p className="text-sm text-blue-800">john@gmail.com</p>
-                <p className="text-xs text-blue-600">→ Dashboard</p>
-              </button>
-              <button
-                onClick={() => quickLogin('child')}
-                disabled={isLoading}
-                className="bg-green-50 hover:bg-green-100 border border-green-200 p-3 rounded-md transition-colors disabled:opacity-50"
-                title="Login as child - redirects to home page"
-              >
-                <p className="text-xs font-medium text-green-600 mb-1">👶 Child Login</p>
-                <p className="text-sm text-green-800">bertie-kid@gmail.com</p>
-                <p className="text-xs text-green-600">→ Home</p>
-              </button>
-            </div>
-            
-            {/* Static info updated with redirect destinations */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-gray-50 p-3 rounded-md">
-                <p className="text-xs font-medium text-gray-500 mb-1">Parent Account</p>
-                <p className="text-sm text-gray-800">parent@example.com</p>
-                <p className="text-sm text-gray-800">password123</p>
-                <p className="text-xs text-gray-500 mt-1">Goes to Dashboard</p>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-md">
-                <p className="text-xs font-medium text-gray-500 mb-1">Child Account</p>
-                <p className="text-sm text-gray-800">child@example.com</p>
-                <p className="text-sm text-gray-800">password123</p>
-                <p className="text-xs text-gray-500 mt-1">Goes to Home</p>
-              </div>
-            </div>
-          </div>
         </div>
       </main>
       
