@@ -19,3 +19,7 @@
 
 ## Brand and UI
 The previously approved premium Figma remains the single visual source of truth. CP03's broken landing page is rejected and has not been merged. Do not merge its CSS or page markup.
+
+## Update — 17 Nov 2026
+Superseded by `docs/DREAM_TALES_V2_AUDIT_2026-11-17.md`. Firestore/Storage rules, parent-only registration,
+server-enforced approval, quotas and log fixes are now implemented; remaining open items are listed there.
