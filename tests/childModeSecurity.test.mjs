@@ -146,10 +146,21 @@ test('Parent Gate title is explicitly white (legacy global h1 colour must not le
 
 test('Parent Dashboard uses only registered artwork and redirects non-parents', () => {
   const view = read('src/components/v2/ParentDashboardView.jsx');
-  assert.match(view, /STORY_SCENES\.foxDiscoversStar\.src/);
+  assert.doesNotMatch(view, /STORY_SCENES|story-scenes/, 'no shared artwork stands in for story covers');
+  assert.match(view, /function PendingCover/);
   assert.doesNotMatch(view, /\p{Extended_Pictographic}/u, 'no emoji in the UI');
   assert.doesNotMatch(view, /data:image\/svg/);
   const page = read('src/app/(dashboard)/dashboard/page.js');
   assert.match(page, /user\.role !== 'parent'/);
   assert.match(page, /router\.replace\(user\?\.childMode \? '\/kid\/dashboard' : '\/login'\)/);
+});
+
+test('Child Mode is entered contextually from My Children through the server-authorised flow', () => {
+  const sheet = read('src/components/v2/ChildActionSheet.jsx');
+  assert.match(sheet, /role="dialog"/);
+  assert.match(sheet, /aria-modal="true"/);
+  assert.match(sheet, /pin_required/);
+  const page = read('src/app/(dashboard)/dashboard/page.js');
+  assert.match(page, /enterChildMode\(childId\)/);
+  assert.match(read('src/lib/client/childMode.js'), /\/api\/child-mode\/enter/);
 });

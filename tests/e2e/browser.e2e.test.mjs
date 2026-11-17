@@ -31,44 +31,76 @@ async function diagnose(label) {
 after(async () => { await browser?.close(); await closeClients(); });
 
 const settle = (ms = 1500) => page.waitForTimeout(ms);
+const SIZES = [[390, 844], [393, 852], [430, 932], [375, 667]];
+async function shoot(name, target = page) {
+  mkdirSync('artifacts/visual', { recursive: true });
+  for (const [w, h] of SIZES) {
+    await target.setViewportSize({ width: w, height: h });
+    await target.evaluate(() => document.fonts.ready);
+    await target.waitForTimeout(300);
+    await target.screenshot({ path: `artifacts/visual/${name}-${w}x${h}.png` });
+  }
+  await target.setViewportSize({ width: 390, height: 844 });
+}
+async function signIn(target, who) {
+  await target.goto(`${BASE}/login`);
+  await target.fill('#email', who.email);
+  await target.fill('#password', PASSWORD);
+  await target.click('button[type="submit"]');
+  await target.waitForURL(/\/dashboard/, { timeout: 20000 });
+}
 
 test('parent signs in through the real login page', async () => {
-  await page.goto(`${BASE}/login`);
-  await page.fill('#email', P.email);
-  await page.fill('#password', PASSWORD);
-  await page.click('button[type="submit"]');
-  await page.waitForURL(/\/dashboard/, { timeout: 20000 });
+  await signIn(page, P);
 });
 
-test('Parent Dashboard renders family data (production build visual capture)', async () => {
+// Visual QA uses the same family, names and story titles as the Final Vision (screen 3) so the
+// production screenshots can be compared like for like. Morning greeting as in the design.
+test('Final Vision fixture: Dashboard and Create Story captured for comparison', async () => {
+  const alex = await signUpParent('Alex');
+  await addChild(alex, 'Emma', 6);
+  await addChild(alex, 'Lucas', 4);
+  for (const [i, title] of ['The Fox and the Starlight Forest', 'Luna and the Rainbow Bridge', "Theo's Underwater Adventure"].entries()) {
+    await addStory(alex, { id: `fv${i}_${alex.uid.slice(0, 6)}`, title });
+  }
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, timezoneId: 'UTC' });
+  const now = new Date();
+  if (now.getUTCHours() >= 12) {
+    const morning = new Date(now); morning.setUTCHours(9, 41, 0, 0);
+    await ctx.clock.setFixedTime(morning);
+  }
+  const fv = await ctx.newPage();
+  try {
+    await signIn(fv, alex);
+    await fv.getByRole('heading', { level: 1, name: 'Good morning, Alex!' }).waitFor({ timeout: 20000 });
+    await fv.getByText("Theo's Underwater Adventure").waitFor();
+    await shoot('dashboard', fv);
+    await fv.goto(`${BASE}/create-story`);
+    await fv.getByRole('heading', { name: 'Create a new story' }).waitFor({ timeout: 20000 });
+    await fv.fill('#story-prompt', 'A friendly dragon who learns to be brave.');
+    await fv.locator('#story-prompt').blur();
+    await shoot('create-story', fv);
+  } finally {
+    await ctx.close();
+  }
+});
+
+test('Parent Dashboard renders family data with neutral pending covers (no shared artwork)', async () => {
   try {
     await page.getByRole('heading', { level: 1, name: /Good (morning|afternoon|evening)/ }).waitFor({ timeout: 20000 });
   } catch (err) { await diagnose('dashboard'); throw err; }
   await page.getByText('Lucas').first().waitFor();
   await page.getByText(APPROVED).first().waitFor();
   assert.ok(await page.getByRole('link', { name: /Create Story/ }).isVisible());
-  mkdirSync('artifacts/visual', { recursive: true });
-  for (const [w, h] of [[390, 844], [393, 852], [430, 932], [375, 667]]) {
-    await page.setViewportSize({ width: w, height: h });
-    await page.evaluate(() => document.fonts.ready);
-    await page.waitForTimeout(300);
-    await page.screenshot({ path: `artifacts/visual/dashboard-${w}x${h}.png` });
-  }
-  await page.setViewportSize({ width: 390, height: 844 });
+  assert.equal(await page.locator('img[src*="story-scenes"]').count(), 0, 'no shared scene art used as a cover');
+  assert.equal(await page.locator('[data-cover="pending"]').count(), 2);
 });
 
-test('Create Story renders for the parent (production build visual capture)', async () => {
+test('Create Story renders for the parent', async () => {
   await page.goto(`${BASE}/create-story`);
   await page.getByRole('heading', { name: 'Create a new story' }).waitFor({ timeout: 20000 });
   await page.fill('#story-prompt', 'A friendly dragon who learns to be brave.');
   assert.ok(await page.getByRole('button', { name: /Generate Story/ }).isEnabled());
-  for (const [w, h] of [[390, 844], [393, 852], [430, 932], [375, 667]]) {
-    await page.setViewportSize({ width: w, height: h });
-    await page.evaluate(() => document.fonts.ready);
-    await page.waitForTimeout(300);
-    await page.screenshot({ path: `artifacts/visual/create-story-${w}x${h}.png` });
-  }
-  await page.setViewportSize({ width: 390, height: 844 });
 });
 
 test('Create Story without a provider key fails safely and keeps the idea', async () => {
@@ -78,9 +110,17 @@ test('Create Story without a provider key fails safely and keeps the idea', asyn
   assert.match(page.url(), /\/create-story/);
 });
 
-test('parent enters Child Mode from profile selection', async () => {
-  await page.goto(`${BASE}/kid-mode`);
-  await page.getByRole('button', { name: /Emma/ }).click();
+test('parent enters Child Mode contextually from My Children (sheet captured for approval)', async () => {
+  await page.goto(`${BASE}/dashboard`);
+  await page.getByRole('button', { name: /^Emma, age 6$/ }).click();
+  const sheet = page.getByRole('dialog', { name: 'Emma' });
+  await sheet.waitFor({ timeout: 10000 });
+  assert.ok(await sheet.getByRole('button', { name: 'Start Child Mode' }).isVisible());
+  await shoot('enter-child-mode-sheet');
+  await page.keyboard.press('Escape');
+  await sheet.waitFor({ state: 'detached' });
+  await page.getByRole('button', { name: /^Emma, age 6$/ }).click();
+  await page.getByRole('dialog', { name: 'Emma' }).getByRole('button', { name: 'Start Child Mode' }).click();
   await page.waitForURL(/\/kid\/dashboard/, { timeout: 20000 });
 });
 

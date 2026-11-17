@@ -8,6 +8,7 @@ import LoadingSpinner from '@/components/common/LoadingSpinner';
 import ParentDashboardView, { greetingFor } from '@/components/v2/ParentDashboardView';
 import { getRecentStories } from '@/firebase/firestore';
 import { normaliseStatus, STORY_STATUS } from '@/lib/storyStatus.mjs';
+import { enterChildMode } from '@/lib/client/childMode';
 
 /** Parent Dashboard (Final Vision 50:14 screen 3). Parent accounts only. */
 export default function ParentDashboardPage() {
@@ -49,6 +50,10 @@ export default function ParentDashboardPage() {
       familyChildren={children}
       stories={stories}
       videoStudioAvailable={false}
+      onEnterChildMode={async (childId) => {
+        await enterChildMode(childId);
+        router.replace('/kid/dashboard');
+      }}
     />
   );
 }

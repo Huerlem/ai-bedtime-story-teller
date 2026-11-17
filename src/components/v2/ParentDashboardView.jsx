@@ -1,9 +1,10 @@
 'use client';
 
+import { useRef, useState } from 'react';
 import Link from 'next/link';
-import { Bell, Clapperboard, Feather, Plus } from 'lucide-react';
+import { Bell, BookOpen, Clapperboard, Feather, Plus } from 'lucide-react';
 import ParentTabBar from './ParentTabBar';
-import { STORY_SCENES } from '@/lib/brandAssets.mjs';
+import ChildActionSheet from './ChildActionSheet';
 
 /**
  * Parent Dashboard — Final Vision 50:14 screen 3 (prototype 75:3 for behaviour).
@@ -12,12 +13,12 @@ import { STORY_SCENES } from '@/lib/brandAssets.mjs';
  * 10 pt gaps; five-tab bar. Presentational only — data comes from the page container.
  */
 export function coverFor(story) {
-  // Generated story art (https) when available. Otherwise the approved premium scene whose
-  // package README assigns it to "Parent Dashboard story cover" (decision pending, see docs).
+  // Only the story's own generated art (https). No shared artwork stands in for a missing
+  // cover (product decision 17 Nov 2026): callers render the neutral pending-cover state.
   if (typeof story?.imageUrl === 'string' && /^https:\/\//.test(story.imageUrl)) {
     return { src: story.imageUrl, alt: '' };
   }
-  return { src: STORY_SCENES.foxDiscoversStar.src, alt: '' };
+  return null;
 }
 
 export function greetingFor(date = new Date()) {
@@ -29,7 +30,11 @@ export function greetingFor(date = new Date()) {
 
 export default function ParentDashboardView({
   firstName, greeting, pendingReviews = 0, familyChildren = [], stories = [], videoStudioAvailable = false,
+  onEnterChildMode,
 }) {
+  const [sheetChild, setSheetChild] = useState(null);
+  const openerRef = useRef(null);
+  const closeSheet = () => { setSheetChild(null); openerRef.current?.focus(); };
   return (
     <div className="mx-auto min-h-[100dvh] w-full max-w-[430px] bg-dt-canvas pb-[112px] pt-[max(47px,env(safe-area-inset-top))] text-[#1F1D4A]">
       <header className="flex items-start justify-between px-[25px] pt-[45px]">
@@ -74,7 +79,13 @@ export default function ParentDashboardView({
         <ul className="mt-[18px] flex overflow-x-auto px-[18px] [scrollbar-width:none]">
           {familyChildren.map((child) => (
             <li key={child.id} className="w-[121px] shrink-0">
-              <Link href={`/my-children?child=${encodeURIComponent(child.id)}`} className="flex flex-col items-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-dt-violet">
+              <button
+                type="button"
+                aria-haspopup="dialog"
+                aria-label={`${child.name || child.displayName}${child.age ? `, age ${child.age}` : ''}`}
+                onClick={(e) => { openerRef.current = e.currentTarget; setSheetChild(child); }}
+                className="flex w-full flex-col items-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-dt-violet"
+              >
                 <span className="flex h-[92px] w-[92px] items-center justify-center overflow-hidden rounded-full bg-[#E3DDFB] text-[34px] font-extrabold text-dt-violet">
                   {child.photoURL
                     // eslint-disable-next-line @next/next/no-img-element
@@ -83,7 +94,7 @@ export default function ParentDashboardView({
                 </span>
                 <span className="mt-[12px] text-[17px] font-extrabold leading-6">{child.name || child.displayName}</span>
                 {child.age ? <span className="text-[15px] font-semibold leading-5 text-[#8D8BA8]">Age {child.age}</span> : null}
-              </Link>
+              </button>
             </li>
           ))}
           <li className="w-[121px] shrink-0">
@@ -111,8 +122,10 @@ export default function ParentDashboardView({
               return (
                 <li key={story.id} className="w-[135px] shrink-0">
                   <Link href={`/edit-story/${encodeURIComponent(story.id)}`} className="block focus-visible:outline focus-visible:outline-2 focus-visible:outline-dt-violet">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={cover.src} alt={cover.alt} width={135} height={95} className="h-[95px] w-[135px] rounded-[10px] object-cover" />
+                    {cover
+                      // eslint-disable-next-line @next/next/no-img-element
+                      ? <img src={cover.src} alt={cover.alt} width={135} height={95} className="h-[95px] w-[135px] rounded-[10px] object-cover" />
+                      : <PendingCover />}
                     <span className="mt-[8px] line-clamp-2 text-[14px] font-bold leading-[21px] text-[#2B2950]">{story.title}</span>
                   </Link>
                 </li>
@@ -123,7 +136,19 @@ export default function ParentDashboardView({
       </section>
 
       <ParentTabBar active="home" />
+      {sheetChild && onEnterChildMode && (
+        <ChildActionSheet child={sheetChild} onClose={closeSheet} onEnterChildMode={onEnterChildMode} />
+      )}
     </div>
+  );
+}
+
+/** Temporary, non-illustrative state until the story has its own generated cover (pending approval). */
+function PendingCover() {
+  return (
+    <span data-cover="pending" className="flex h-[95px] w-[135px] items-center justify-center rounded-[10px] bg-[linear-gradient(160deg,#ECE8FD_0%,#DCD6FA_100%)] text-[#A49CE0]" aria-hidden="true">
+      <BookOpen size={30} strokeWidth={1.8} />
+    </span>
   );
 }
 
