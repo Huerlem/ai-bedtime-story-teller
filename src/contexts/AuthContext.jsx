@@ -151,11 +151,6 @@ export const AuthProvider = ({ children }) => {
                         ...userData
                     };
                     
-                    console.log('🔍 REFRESH DEBUG:');
-                    console.log('- Firebase Auth User:', auth.currentUser);
-                    console.log('- Firestore Document Data:', userData);
-                    console.log('- Combined User Data:', updatedUserData);
-                    console.log('- User Role:', updatedUserData.role);
                     
                     setUser(updatedUserData);
                     console.log('✅ User data refreshed successfully');
@@ -256,7 +251,6 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
             try {
-                console.log('🔍 AUTH STATE CHANGED:', authUser?.email || 'No user');
                 
                 if (authUser) {
                     console.log('📁 Getting user document from Firestore...');
@@ -272,17 +266,8 @@ export const AuthProvider = ({ children }) => {
                             ...firestoreData
                         };
                         
-                        console.log('🔍 AUTH STATE DEBUG:');
-                        console.log('- Firebase Auth User UID:', authUser.uid);
-                        console.log('- Firebase Auth Email:', authUser.email);
-                        console.log('- Firestore Document Exists:', userDoc.exists());
-                        console.log('- Raw Firestore Data:', firestoreData);
-                        console.log('- Firestore Role Field:', firestoreData.role);
-                        console.log('- Combined User Data:', combinedUserData);
-                        console.log('- Final Role Value:', combinedUserData.role);
                         
                         setUser(combinedUserData);
-                        console.log('✅ User authenticated and data loaded:', combinedUserData.displayName || combinedUserData.email);
                     } else {
                         console.warn('⚠️ User exists in Auth but not in Firestore - creating default document');
                         const defaultData = {
@@ -301,7 +286,6 @@ export const AuthProvider = ({ children }) => {
                             ...defaultData
                         };
                         
-                        console.log('📝 Created default user document:', newUserData);
                         setUser(newUserData);
                     }
                 } else {
