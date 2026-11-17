@@ -10,7 +10,7 @@ mkdirSync('artifacts/visual', { recursive: true });
 const browser = await chromium.launch();
 const report = [];
 for (const [w, h, label] of SIZES) {
-  const page = await (await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 3 })).newPage();
+  const page = await (await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 2 })).newPage();
   for (const [name, path, heading] of SCREENS) {
     await page.goto(BASE + path);
     await page.getByRole('heading', { name: heading }).waitFor({ timeout: 20000 });
