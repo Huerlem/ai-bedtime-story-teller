@@ -8,15 +8,12 @@ export async function POST(request) {
   if (denied) return denied;
   const size = Number(request.headers.get('content-length'));
   if (Number.isFinite(size) && size > 16000) return NextResponse.json({error:'Request too large'}, {status:413});
-  console.log('=== API GENERATE IMAGE CHAMADA ===');
   
   try {
     let body;
     try {
       body = await request.json();
-      console.log('Body parseado com sucesso:', body);
-    } catch (parseError) {
-      console.error('Erro ao parsear body:', parseError);
+    } catch {
       return NextResponse.json(
         { error: 'Erro ao parsear JSON do body' },
         { status: 400 }
@@ -31,7 +28,6 @@ export async function POST(request) {
       mood = 'cheerful' 
     } = body;
 
-    console.log('Dados extraídos:', { storyText, prompt, characters, setting, mood });
 
     // Criar uma imagem SVG customizada baseada nos dados da história
     const colors = {
@@ -115,7 +111,6 @@ export async function POST(request) {
     // Converter SVG para Data URL
     const svgDataUrl = `data:image/svg+xml;base64,${Buffer.from(svgContent).toString('base64')}`;
     
-    console.log('SVG customizado criado com sucesso');
 
     const response = {
       imageUrl: svgDataUrl,
@@ -131,20 +126,12 @@ export async function POST(request) {
       }
     };
 
-    console.log('=== API GENERATE IMAGE SUCESSO ===');
-    return NextResponse.json(response);
+    return NextResponse.json(response, { headers: { 'Cache-Control': 'no-store' } });
 
   } catch (error) {
-    console.error('=== ERRO NA API GENERATE IMAGE ===');
-    console.error('Error:', error);
-    
-    return NextResponse.json(
-      { 
-        error: 'Erro interno do servidor de imagem',
-        details: error?.message || 'Erro desconhecido'
-      },
-      { status: 500 }
-    );
+    // Never log request bodies: they can contain a child's story or name.
+    console.error('generate-image failed:', error?.name || 'Error');
+    return NextResponse.json({ error: 'Illustration service unavailable' }, { status: 500 });
   }
 }
 

@@ -17,3 +17,10 @@ test('admin Firebase credentials never loaded into client helper',()=>{
  const helper=read('src/lib/client/secureFetch.js');
  assert.doesNotMatch(helper,/firebase-admin|FIREBASE_SERVICE_ACCOUNT_KEY/);
 });
+test('AI routes never log request bodies or story text', () => {
+ for (const route of ['generate-story','generate-title','generate-suggestion','generate-image','tts']) {
+  const text = read('src/app/api/'+route+'/route.js');
+  assert.doesNotMatch(text, /console\.(log|info|debug)\(/, route);
+  assert.doesNotMatch(text, /console\.\w+\([^)]*(body|storyText|prompt|content|text)\b/, route);
+ }
+});

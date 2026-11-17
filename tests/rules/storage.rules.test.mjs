@@ -9,7 +9,7 @@ const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47]);
 
 before(async () => {
   env = await initializeTestEnvironment({
-    projectId: 'dream-tales-rules-test',
+    projectId: 'demo-dream-tales',
     firestore: { rules: readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8') },
     storage: { rules: readFileSync(new URL('../../storage.rules', import.meta.url), 'utf8') },
   });

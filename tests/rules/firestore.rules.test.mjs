@@ -8,7 +8,7 @@ import {
   assertSucceeds,
 } from '@firebase/rules-unit-testing';
 
-const PROJECT_ID = 'dream-tales-rules-test';
+const PROJECT_ID = 'demo-dream-tales';
 let env;
 
 const PARENT_A = 'parentA';
