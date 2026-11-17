@@ -16,6 +16,7 @@ import {
 } from 'firebase/firestore';
 import { auth, db } from './firebaseConfig';
 import { isChildVisible, STORY_STATUS } from '@/lib/storyStatus.mjs';
+import { sortChildren } from '@/lib/childOrder.mjs';
 
 /**
  * Get all stories for a specific user
@@ -470,10 +471,10 @@ export async function getChildAccounts(familyId) {
     
     const querySnapshot = await getDocs(q);
     
-    return querySnapshot.docs.map(doc => ({
+    return sortChildren(querySnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
-    }));
+    })));
   } catch (error) {
     console.error('Error getting child accounts:', error);
     throw error;
