@@ -28,18 +28,38 @@ export async function POST(request) {
 
   const ref = adminDb().collection('parentSecrets').doc(token.familyId);
   const now = Date.now();
-  const snap = await ref.get();
-  if (!snap.exists || !snap.data().pinHash) return deny(409, { error: 'No code is set. Use your password instead.', code: 'pin_required' });
-  const secrets = snap.data();
-  const lock = lockState(secrets, now);
-  if (lock.locked) return deny(429, { error: 'Too many attempts. Please try again later or use your password.', code: 'locked', retryAfterSeconds: lock.retryAfterSeconds }, { 'Retry-After': String(lock.retryAfterSeconds) });
 
-  const ok = await verifyPin(body.pin, secrets);
+  // Reserve the attempt atomically BEFORE verifying: the failure is pre-counted inside a
+  // transaction, so parallel guesses cannot exceed the lockout schedule. A correct code
+  // resets the counter afterwards.
+  let reservation;
+  try {
+    reservation = await adminDb().runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      if (!snap.exists || !snap.data().pinHash) return { status: 'no_pin' };
+      const secrets = snap.data();
+      const lock = lockState(secrets, now);
+      if (lock.locked) return { status: 'locked', retryAfterSeconds: lock.retryAfterSeconds };
+      const next = afterFailure(secrets, now);
+      tx.update(ref, { ...next, lastAttemptAt: FieldValue.serverTimestamp() });
+      return { status: 'reserved', secrets, next };
+    });
+  } catch {
+    return deny(503, { error: 'Verification is temporarily unavailable. Please try again.' });
+  }
+  if (reservation.status === 'no_pin') return deny(409, { error: 'No code is set. Use your password instead.', code: 'pin_required' });
+  if (reservation.status === 'locked') {
+    return deny(429, { error: 'Too many attempts. Please try again later or use your password.', code: 'locked', retryAfterSeconds: reservation.retryAfterSeconds }, { 'Retry-After': String(reservation.retryAfterSeconds) });
+  }
+
+  const ok = await verifyPin(body.pin, reservation.secrets);
   if (!ok) {
-    const next = afterFailure(secrets, now);
-    await ref.update({ ...next, lastFailureAt: FieldValue.serverTimestamp() });
     await adminDb().collection('auditLog').add({ type: 'parent_gate_failed', familyId: token.familyId, childId: token.childId || null, at: FieldValue.serverTimestamp() });
-    return deny(401, { error: 'That code is not correct. Try again.', code: 'invalid_pin', locked: next.lockedUntilMs > now });
+    const lockedNow = reservation.next.lockedUntilMs > now;
+    return deny(lockedNow ? 429 : 401, {
+      error: lockedNow ? 'Too many attempts. Please try again later or use your password.' : 'That code is not correct. Try again.',
+      code: lockedNow ? 'locked' : 'invalid_pin',
+    });
   }
   await ref.update({ failedAttempts: 0, lockedUntilMs: 0 });
   const parentToken = await adminAuth().createCustomToken(token.familyId, { parentGateAt: Math.floor(now / 1000) });

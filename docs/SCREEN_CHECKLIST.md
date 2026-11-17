@@ -18,13 +18,17 @@ the CI/TestFlight build before sign-off.
 | 5a | Child Library (105:2, 82:12, 95:20) | `/kid/dashboard` | legacy UI; Child Mode session ✓ | ✗ | wiring ✓, rules tests (CI) | ✗ | Covers |
 | 5b | Select child / Enter Child Mode (25:25 flow) | `/kid-mode` | **✓ V2 tokens** | n/a (no FV screen) | wiring ✓ | ✓ | — |
 | 6 | Video Studio (FV 6 / 80:2–80:102) | — | ✗ | ✗ | ✗ | ✗ | Backend not built; scene still art |
-| 7 | **Parental Verification (FV 7 / 105:18–105:267)** | `/kid/parent-gate` | **✓** | **✓ 390×844, 430×932, 375×667, 320×568 (scrolls)** — `docs/visual-qa/` | server policy ✓; E2E pending | ✓ labels, live error, keyboard digits | — |
+| 7 | **Parental Verification (FV 7 / 105:18–105:267)** | `/kid/parent-gate` | **✓** | **Geometry ✓** (50/50 overlay at 390 pt; 375×667, 430×932); **typography pending Nunito build check**; 320×568 scrolls | server policy + atomic throttling ✓ (unit/wiring); emulator/E2E pending | ✓ labels, live error, keyboard digits | Not yet approved by product owner |
 | — | Settings · Privacy & safety | `/settings` | **✓ V2 tokens** | n/a (no FV screen) | wiring ✓ | ✓ | — |
 
-### Parental Verification — recorded differences vs Final Vision
-- The composite's phone frame is taller than 390×844, so vertical spacing was scaled by about 0.91 to fit a
-  real 390×844 device. Order, proportions and widths match within about 10 pt.
-- The bottom-left key shows "." as in the FV but is inert (no function in a numeric code) — decision requested.
+### Parental Verification — measurements and recorded differences vs Final Vision
+Measured from the Final Vision screen interior (208 px → 390 pt; an earlier comparison used a 12% too-narrow crop
+and has been replaced):
+keys 110×68 pt, gap 7 pt, side margins 23 pt; code boxes 64×68 pt, gap 10 pt, top at 363 pt; lock disc 110 pt
+centred at 165 pt; title centre 250 pt; subtitle lines 292 and 325 pt; keypad 460–750 pt. The implementation uses
+these values; the 50/50 overlay (`docs/visual-qa/parent-gate_vs_final-vision.png`) shows each block aligned to
+within about 2–3 pt, footer included (bottom home-indicator inset of 34 pt reserved).
+- "." key removed per product decision; position left empty.
 - The FV letters under the digits are illegible in the render; standard phone-keypad letters (ABC… WXYZ) are used.
 - The FV shows the iOS status bar (device chrome, not app UI).
 - The harness used a solid lock glyph; the app uses Lucide `LockKeyhole` (outline with keyhole, as in the FV).

@@ -87,8 +87,11 @@ test('server wiring: Child Mode tokens never pass the parent gate; privileged ro
   assert.match(enter, /code: 'pin_required'/);
   const exit = read('src/app/api/child-mode/exit/route.js');
   assert.match(exit, /token\.dtRole !== CHILD_MODE_ROLE/);
+  assert.match(exit, /runTransaction/);
   assert.match(exit, /lockState\(secrets, now\)/);
   assert.match(exit, /afterFailure\(secrets, now\)/);
+  // the attempt is counted inside the transaction, before the code is verified
+  assert.ok(exit.indexOf('tx.update(ref') < exit.indexOf('await verifyPin('), 'attempt reserved before verification');
 });
 
 test('client: Child Mode never bootstraps a parent profile and uses claims for its library', () => {
@@ -114,4 +117,23 @@ test('Parent Gate submits the code outside React state updaters (no double submi
   const ui = read('src/components/childmode/ParentGate.jsx');
   assert.doesNotMatch(ui, /setDigits\(\(current\) => \{[^}]*submit\(/s);
   assert.match(ui, /if \(next\.length === 4\) submit\(next\);/);
+});
+
+test('Parent Gate keypad: no "." key, empty bottom-left slot, backspace kept, measured geometry', () => {
+  const ui = read('src/components/childmode/ParentGate.jsx');
+  assert.doesNotMatch(ui, />\.<\/div>/);
+  assert.match(ui, /<div aria-hidden="true" \/>/);
+  assert.match(ui, /aria-label="Delete last digit"/);
+  assert.match(ui, /grid-cols-3 gap-\[7px\]/);
+  assert.match(ui, /h-\[68px\] w-\[64px\]/);
+  assert.match(ui, /px-\[23px\]/);
+});
+
+test('every way out of Child Mode needs the parent: code (server) or password sign-in', () => {
+  const page = read('src/app/(kid-dashboard)/kid/parent-gate/page.jsx');
+  assert.match(page, /exitChildModeWithPin\(pin\)/);
+  assert.match(page, /leaveChildModeWithPassword\(\)/);
+  const client = read('src/lib/client/childMode.js');
+  assert.match(client, /signOut\(auth\)/, 'forgot code ends the child session; parent must sign in with password');
+  assert.doesNotMatch(client, /signInWithEmailAndPassword|parentToken|localStorage/);
 });

@@ -26,15 +26,24 @@ Values were measured as medians over flat regions of the Final Vision render (sp
 Exact colours can only be confirmed against a Figma source with editable fills. **The Final Vision is a raster
 image, so these values are measured, not specified.**
 
-## Content and flow conflicts awaiting a decision
+## Product decisions (17 Nov 2026)
 
-1. **App Map V2 board (`50:11`)** lists child-side "Create (Simple)" and "Sleep Mode". The handoff, IA (`2:50`)
-   and Decision Gate state that children never create content. Not implemented until you decide.
+- **Artwork:** never use crops from flattened mockups; use only the supplied original packages.
+- **Children never create, generate or publish** in V2. *Sleep Mode* may be built as a read-only bedtime experience
+  using approved stories (it needs a Figma design before any UI is built).
+- **Parental Verification keypad:** "." key removed and its position left empty; backspace kept.
+- **Icons:** Lucide approved, provided its sizes and stroke weights match Figma. Parent Gate: ChevronLeft 28/2.2,
+  LockKeyhole 58/1.75 (≈ 4.2 pt rendered stroke), Delete 28/1.8.
+
+## Content and flow conflicts (history)
+
+1. **App Map V2 board (`50:11`)** lists child-side "Create (Simple)" and "Sleep Mode". **Decided:** no child
+   creation; Sleep Mode read-only (design pending).
 2. **Prototype `75:3`** uses emoji avatars, a typeset "✦ DreamTales" wordmark and a vector fox placeholder. These
    are superseded by the Final Vision and will not be implemented.
 3. **Parental Verification**: the Final Vision shows a 4-digit keypad; the handoff forbids client-side PINs.
-   Implemented as a server-verified PIN (hashed, throttled, locked out after repeated failures) with
-   password re-authentication as the fallback ("Forgot code?").
+   Implemented as a server-verified PIN (hashed, attempts reserved atomically in a transaction, escalating lockout).
+   "Forgot code?" ends the child session and requires the parent's password.
 4. **Sample names**: the Final Vision and flow board use Emma (6) and Lucas (4); older boards use Luna and Theo.
    Real screens show the family's own profile data.
 5. **Tablet layout**: the flow board (`65:3`) shows iPad layouts with a left navigation rail. The phone Final

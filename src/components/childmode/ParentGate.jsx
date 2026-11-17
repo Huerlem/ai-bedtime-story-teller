@@ -56,82 +56,67 @@ export default function ParentGate({ onSubmit, onBack, onForgot }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [press, erase]);
 
+  // Geometry measured from Final Vision 50:14 screen 7 (208 px → 390 pt, 17 Nov 2026):
+  // keys 110×68 pt, 7 pt gaps, 23 pt margins; code boxes 64×68 pt, 10 pt gaps; lock disc
+  // 110 pt centred at y=165; title centred at y=250; keypad y=460–750; footer at the bottom.
+  // Short screens (≤700 pt tall, e.g. iPhone SE) use a proportionally compacted variant.
+  const key = 'flex h-[68px] [@media(max-height:700px)]:h-[52px] flex-col items-center justify-center rounded-[12px] border border-white/[0.06] bg-[#232A55] text-white transition active:bg-[#2E3666] disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-dt-gold';
   return (
-    <main className="dt-gate relative mx-auto flex min-h-[100dvh] w-full max-w-[430px] flex-col bg-dt-night px-[6px] pb-[max(20px,env(safe-area-inset-bottom))] pt-[max(47px,env(safe-area-inset-top))] text-white">
+    <main className="relative mx-auto flex min-h-[100dvh] w-full max-w-[430px] flex-col bg-dt-night px-[23px] pb-[max(34px,env(safe-area-inset-bottom))] [@media(max-height:700px)]:pb-[max(8px,env(safe-area-inset-bottom))] pt-[max(47px,env(safe-area-inset-top))] text-white">
       <button
         type="button"
         onClick={onBack}
         aria-label="Back to my stories"
-        className="ml-[6px] mt-[16px] flex h-11 w-11 [@media(max-height:700px)]:mt-1 items-center justify-center rounded-full text-white/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-dt-gold"
+        className="-ml-[5px] mt-[35px] [@media(max-height:700px)]:mt-[4px] flex h-11 w-11 items-center justify-center rounded-full text-white/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-dt-gold"
       >
-        <ChevronLeft size={28} strokeWidth={2} aria-hidden="true" />
+        <ChevronLeft size={28} strokeWidth={2.2} aria-hidden="true" />
       </button>
 
-      <div className="mx-auto -mt-3 flex h-[106px] w-[106px] [@media(max-height:700px)]:h-[72px] [@media(max-height:700px)]:w-[72px] items-center justify-center rounded-full bg-[#27315F] shadow-[0_0_36px_rgba(115,100,246,0.28)]">
-        <LockKeyhole size={56} strokeWidth={2.4} aria-hidden="true" />
+      <div className="mx-auto -mt-[16px] flex h-[110px] w-[110px] [@media(max-height:700px)]:h-[72px] [@media(max-height:700px)]:w-[72px] items-center justify-center rounded-full bg-[#27315F] shadow-[0_0_36px_rgba(115,100,246,0.28)]">
+        <LockKeyhole size={58} strokeWidth={1.75} className="[@media(max-height:700px)]:h-10 [@media(max-height:700px)]:w-10" aria-hidden="true" />
       </div>
 
-      <h1 className="mt-[22px] [@media(max-height:700px)]:mt-3 text-center text-[25px] font-bold leading-8 tracking-[-0.2px]">Parental Verification</h1>
-      <p className="mt-2 text-center text-[19px] leading-[34px] text-white/85">
+      <h1 className="mt-[14px] [@media(max-height:700px)]:mt-[10px] text-center text-[25px] font-bold leading-8">Parental Verification</h1>
+      <p className="mt-[10px] [@media(max-height:700px)]:mt-1 text-center text-[19px] leading-[33px] [@media(max-height:700px)]:leading-[26px] text-white/85">
         Please enter the code<br />to access the parent area
       </p>
 
-      <div className="mt-4 flex justify-center gap-[12px]" role="group" aria-label={`Code entry, ${digits.length} of 4 digits entered`}>
+      <div className="mt-[22px] [@media(max-height:700px)]:mt-3 flex justify-center gap-[10px]" role="group" aria-label={`Code entry, ${digits.length} of 4 digits entered`}>
         {[0, 1, 2, 3].map((i) => {
           const filled = i < digits.length;
           const current = i === digits.length && !busy;
           return (
             <div
               key={i}
-              className={`flex h-[74px] w-[72px] [@media(max-height:700px)]:h-[56px] [@media(max-height:700px)]:w-[56px] items-center justify-center rounded-[14px] border ${current ? 'border-white/60 shadow-[0_0_12px_rgba(154,121,248,0.45)]' : 'border-white/25'} bg-white/[0.05]`}
+              className={`flex h-[68px] w-[64px] [@media(max-height:700px)]:h-[54px] [@media(max-height:700px)]:w-[52px] items-center justify-center rounded-[12px] border ${current || filled ? 'border-white/55' : 'border-white/25'} bg-white/[0.05]`}
               aria-hidden="true"
             >
               <span className={filled
-                ? 'h-[22px] w-[22px] rounded-full bg-[#E9E6FF] shadow-[0_0_14px_4px_rgba(154,121,248,0.85)]'
-                : 'h-[11px] w-[11px] rounded-full bg-white/80'} />
+                ? 'h-[20px] w-[20px] rounded-full bg-[#ECE9FF] shadow-[0_0_14px_4px_rgba(154,121,248,0.85)]'
+                : 'h-[11px] w-[11px] rounded-full bg-white/85'} />
             </div>
           );
         })}
       </div>
 
-      <p role="alert" aria-live="assertive" className="mt-1 min-h-[22px] text-center text-[15px] text-[#FFB4BA]">
+      <p role="alert" aria-live="assertive" className="mt-[4px] min-h-[22px] text-center text-[15px] leading-[22px] text-[#FFB4BA]">
         {error}
       </p>
 
-      <div className="mt-1 grid grid-cols-3 gap-[8px]" aria-label="Number pad">
+      <div className="mt-[3px] grid grid-cols-3 gap-[7px]" aria-label="Number pad">
         {KEYS.map(([d, letters]) => (
-          <button
-            key={d}
-            type="button"
-            disabled={busy || locked}
-            onClick={() => press(d)}
-            aria-label={d}
-            className="flex h-[64px] [@media(max-height:700px)]:h-[50px] flex-col items-center justify-center rounded-[14px] border border-white/[0.06] bg-[#232A55] text-white transition active:bg-[#2E3666] disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-dt-gold"
-          >
-            <span className="text-[24px] font-semibold leading-7">{d}</span>
+          <button key={d} type="button" disabled={busy || locked} onClick={() => press(d)} aria-label={d} className={key}>
+            <span className="text-[25px] font-semibold leading-7">{d}</span>
             <span className="h-[10px] text-[7px] font-semibold uppercase leading-[10px] tracking-[0.6px] text-white/60" aria-hidden="true">{letters}</span>
           </button>
         ))}
-        {/* Final Vision shows "." in this position; it has no function in a numeric code
-            and is rendered as an inert key (see docs/DESIGN_TOKENS.md conflicts). */}
-        <div className="flex h-[64px] [@media(max-height:700px)]:h-[50px] items-center justify-center rounded-[14px] border border-white/[0.06] bg-[#232A55] text-[24px] text-white/80" aria-hidden="true">.</div>
-        <button
-          type="button"
-          disabled={busy || locked}
-          onClick={() => press('0')}
-          aria-label="0"
-          className="flex h-[64px] [@media(max-height:700px)]:h-[50px] items-center justify-center rounded-[14px] border border-white/[0.06] bg-[#232A55] text-[24px] font-semibold text-white active:bg-[#2E3666] disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-dt-gold"
-        >
-          0
+        {/* Product decision 17 Nov 2026: no "." key — the position stays empty. */}
+        <div aria-hidden="true" />
+        <button type="button" disabled={busy || locked} onClick={() => press('0')} aria-label="0" className={key}>
+          <span className="text-[25px] font-semibold leading-7">0</span>
         </button>
-        <button
-          type="button"
-          disabled={busy || digits.length === 0}
-          onClick={erase}
-          aria-label="Delete last digit"
-          className="flex h-[64px] [@media(max-height:700px)]:h-[50px] items-center justify-center rounded-[14px] border border-white/[0.06] bg-[#232A55] text-white active:bg-[#2E3666] disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-dt-gold"
-        >
-          <Delete size={26} strokeWidth={2} aria-hidden="true" />
+        <button type="button" disabled={busy || digits.length === 0} onClick={erase} aria-label="Delete last digit" className={key}>
+          <Delete size={28} strokeWidth={1.8} aria-hidden="true" />
         </button>
       </div>
 
