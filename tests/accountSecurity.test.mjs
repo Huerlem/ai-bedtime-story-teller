@@ -57,3 +57,16 @@ test('framework versions are on maintained, patched release lines', () => {
   assert.ok(rMaj === 19 && (rMin > 2 || (rMin === 2 && rPatch >= 6)), `react ${pkg.dependencies.react}`);
   assert.equal(pkg.dependencies.react, pkg.dependencies['react-dom']);
 });
+
+test('dependencies are locked and CI installs them reproducibly with a security gate', () => {
+  const lock = JSON.parse(read('package-lock.json'));
+  const pkg = JSON.parse(read('package.json'));
+  assert.equal(lock.lockfileVersion, 3);
+  for (const [name, range] of Object.entries({ ...pkg.dependencies, ...pkg.devDependencies })) {
+    assert.equal(lock.packages[''].dependencies?.[name] ?? lock.packages[''].devDependencies?.[name], range, `lock out of sync for ${name}`);
+  }
+  const build = read('.github/workflows/dream-tales-build.yml');
+  assert.doesNotMatch(build, /npm install/);
+  assert.match(build, /npm audit --omit=dev --audit-level=high/);
+  assert.doesNotMatch(read('.github/workflows/dream-tales-validation.yml'), /npm install/);
+});

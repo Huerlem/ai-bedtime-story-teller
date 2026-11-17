@@ -137,3 +137,8 @@ test('every way out of Child Mode needs the parent: code (server) or password si
   assert.match(client, /signOut\(auth\)/, 'forgot code ends the child session; parent must sign in with password');
   assert.doesNotMatch(client, /signInWithEmailAndPassword|parentToken|localStorage/);
 });
+
+test('Parent Gate title is explicitly white (legacy global h1 colour must not leak in)', () => {
+  const ui = read('src/components/childmode/ParentGate.jsx');
+  assert.match(ui, /<h1 className="[^"]*text-white[^"]*">Parental Verification<\/h1>/);
+});

@@ -73,11 +73,11 @@ export default function ParentGate({ onSubmit, onBack, onForgot }) {
       </button>
 
       <div className="mx-auto -mt-[16px] flex h-[110px] w-[110px] [@media(max-height:700px)]:h-[72px] [@media(max-height:700px)]:w-[72px] items-center justify-center rounded-full bg-[#27315F] shadow-[0_0_36px_rgba(115,100,246,0.28)]">
-        <LockKeyhole size={58} strokeWidth={1.75} className="[@media(max-height:700px)]:h-10 [@media(max-height:700px)]:w-10" aria-hidden="true" />
+        <LockKeyhole size={64} strokeWidth={1.8} className="[@media(max-height:700px)]:h-10 [@media(max-height:700px)]:w-10" aria-hidden="true" />
       </div>
 
-      <h1 className="mt-[14px] [@media(max-height:700px)]:mt-[10px] text-center text-[25px] font-bold leading-8">Parental Verification</h1>
-      <p className="mt-[10px] [@media(max-height:700px)]:mt-1 text-center text-[19px] leading-[33px] [@media(max-height:700px)]:leading-[26px] text-white/85">
+      <h1 className="mt-[14px] [@media(max-height:700px)]:mt-[10px] text-center text-[25px] font-bold leading-8 text-white">Parental Verification</h1>
+      <p className="mt-[10px] [@media(max-height:700px)]:mt-1 text-center text-[19px] font-semibold leading-[33px] [@media(max-height:700px)]:leading-[26px] text-white/85">
         Please enter the code<br />to access the parent area
       </p>
 

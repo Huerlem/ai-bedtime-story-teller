@@ -3,11 +3,14 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { auth, db } from '@/firebase/firebaseConfig';
 import { loginUser, logoutUser, registerUser } from '@/firebase/auth';
 import { CHILD_MODE_ROLE } from '@/lib/parentGatePolicy.mjs';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
+
+// Routes that only a parent account may render.
+const PARENT_AREA = ['/dashboard', '/create-story', '/my-stories', '/my-children', '/settings', '/profile', '/edit-story', '/play-story', '/kid-mode', '/ChildProfileManager'];
 
 // Create context
 const AuthContext = createContext();
@@ -334,18 +337,14 @@ export const AuthProvider = ({ children }) => {
         };
     }, [clearIdleTimers]);
 
+    // Child Mode must never mount parent-area pages: block rendering and redirect before any
+    // parent page effect runs. UX layer only — Firestore rules and API checks are the boundary.
+    const pathname = usePathname() || '';
+    const inParentArea = PARENT_AREA.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+    const childBlocked = user?.role === 'child' && inParentArea;
     useEffect(() => {
-        if (typeof window !== 'undefined' && user?.role === 'child') {
-            const currentPath = window.location.pathname;
-            
-            // If child somehow ends up on dashboard, redirect them to home
-            const parentArea = ['/dashboard', '/create-story', '/my-stories', '/my-children', '/settings', '/profile', '/edit-story', '/play-story', '/kid-mode'];
-            if (parentArea.some((p) => currentPath === p || currentPath.startsWith(`${p}/`))) {
-                // UX only — Firestore rules and API checks are the real boundary.
-                router.replace(user.childMode ? '/kid/dashboard' : '/');
-            }
-        }
-    }, [user, router]);
+        if (childBlocked) router.replace(user?.childMode ? '/kid/dashboard' : '/');
+    }, [childBlocked, user, router]);
 
     // Provide authentication context value
     const value = {
@@ -361,7 +360,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     // Show loading screen while initializing
-    if (loading) {
+    if (loading || childBlocked) {
         return <LoadingSpinner fullScreen message="Loading..." />;
     }
 

@@ -18,7 +18,14 @@ before(async () => {
   assert.equal((await api(`/api/stories/${approved}/approve`, { token: await idToken(P), method: 'POST' })).status, 200);
   browser = await chromium.launch();
   page = await (await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 })).newPage();
+  page.on('console', (m) => { if (['error', 'warning'].includes(m.type())) consoleLog.push(`[${m.type()}] ${m.text()}`.slice(0, 400)); });
+  page.on('pageerror', (e) => consoleLog.push(`[pageerror] ${e.message}`.slice(0, 400)));
 });
+const consoleLog = [];
+async function diagnose(label) {
+  const text = (await page.locator('body').innerText().catch(() => '')).replace(/\s+/g, ' ').slice(0, 1200);
+  console.log(`DIAG ${label} url=${page.url()}\nDIAG text: ${text}\nDIAG console:\n${consoleLog.slice(-15).join('\n')}`);
+}
 after(async () => { await browser?.close(); await closeClients(); });
 
 const settle = (ms = 1500) => page.waitForTimeout(ms);
@@ -38,14 +45,16 @@ test('parent enters Child Mode from profile selection', async () => {
 });
 
 test('Child Mode library shows the approved story and never the draft', async () => {
-  await page.getByText(APPROVED).first().waitFor({ timeout: 20000 });
+  try {
+    await page.getByText(APPROVED).first().waitFor({ timeout: 20000 });
+  } catch (err) { await diagnose('library'); throw err; }
   assert.equal(await page.getByText(DRAFT).count(), 0);
 });
 
 test('direct navigation to parent areas from Child Mode is redirected and exposes no parent data', async () => {
   for (const path of ['/dashboard', '/settings', '/create-story', '/my-stories', '/my-children', '/kid-mode', `/edit-story/b2_${P.uid.slice(0, 6)}`]) {
     await page.goto(`${BASE}${path}`);
-    await page.waitForURL(/\/kid\/dashboard/, { timeout: 15000 });
+    try { await page.waitForURL(/\/kid\/dashboard/, { timeout: 15000 }); } catch (err) { await diagnose(path); throw err; }
     await settle(500);
     assert.equal(await page.getByText(DRAFT).count(), 0, `draft leaked on ${path}`);
     assert.equal(await page.getByText(P.email).count(), 0, `parent email leaked on ${path}`);
