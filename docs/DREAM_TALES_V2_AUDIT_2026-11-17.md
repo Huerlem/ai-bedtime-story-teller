@@ -29,10 +29,10 @@ Figma screens are implemented**.
 | 4 | P0 | **Role cookie trusted for routing.** Unsigned JSON `user` cookie with `role`; middleware made decisions from it. | FIXED — cookie no longer written/read; middleware clears it |
 | 5 | P0 | **No quotas / cost controls** on Groq and Google TTS. | FIXED — per-parent daily quotas (Admin transaction, fails closed, 429) |
 | 6 | P0 | **Child data in logs.** `generate-image` logged full body + story text; AuthContext logged profile/email; TTS logged tokenised URLs. Contradicts the earlier "logs removed" claim. | FIXED + regression test |
-| 7 | P0 | **Previously public audio.** Retired `/api/upload_audio` called `makePublic()` on `audio/{uid}/{story}.mp3`; those ACLs survive rule changes. | OPEN — `scripts/audit-public-audio.sh` provided; must be run by a project owner |
-| 8 | P0 | **Download URLs are bearer tokens.** `audioUrl`/photo URLs bypass Storage rules for anyone holding the link. | OPEN — move to short-lived signed URLs served by an authenticated API |
-| 9 | P0 | **Child Mode runs on the parent's session.** A child can navigate to parent screens and create stories; only approval is password-gated. No Parent Gate on exit. | OPEN — next item (child-mode custom token + parent re-auth gate) |
-| 10 | P0 | **Account deletion, data export, consent records** not implemented (UK GDPR / Children's Code, App Store 5.1.1(v)). | OPEN |
+| 7 | P0 | **Previously public audio.** Retired `/api/upload_audio` called `makePublic()` on `audio/{uid}/{story}.mp3`; those ACLs survive rule changes. | OPEN — `scripts/audit-public-audio.sh` provided; must be run by a project owner (playback no longer uses those URLs) |
+| 8 | P0 | **Download URLs are bearer tokens.** `audioUrl`/photo URLs bypass Storage rules for anyone holding the link. | FIXED for narration — private `audioPath` + 10-min signed URLs via `/api/media/narration`; profile photos still use download URLs (OPEN) |
+| 9 | P0 | **Child Mode runs on the parent's session.** A child can navigate to parent screens and create stories; only approval is password-gated. No Parent Gate on exit. | FIXED — separate Child Mode identity (custom token + rules), server-verified throttled Parent Gate code; privileged actions need password |
+| 10 | P0 | **Account deletion, data export, consent records** not implemented (UK GDPR / Children's Code, App Store 5.1.1(v)). | FIXED deletion + export; consent records and privacy policy OPEN |
 | 11 | P1 | Dead/unsafe duplicates: `utils/middleware.js` (cookie trust), `utils/auth.js` (unauthenticated copy of image route), `RegisterForm.js`. | FIXED — removed |
 | 12 | P1 | `fetchSignInMethodsForEmail` used at sign-up (email enumeration). | FIXED |
 | 13 | P1 | Illustration endpoint returns a coloured SVG with an emoji — **placeholder**, not AI art. | OPEN |
@@ -149,15 +149,24 @@ emulator rules tests (both wired into CI).
 
 ---
 
+## 7b. Update — second session (17 Nov 2026)
+
+- Definitive asset inventory: `docs/ASSET_INVENTORY.md`; token conflicts: `docs/DESIGN_TOKENS.md`;
+  screen checklist and visual QA: `docs/SCREEN_CHECKLIST.md`, `docs/visual-qa/`.
+- Approved icon pack and transparent fox mascot integrated; Nunito and `dt` tokens in place.
+- Deployment notes: the server needs `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`, and its service account needs
+  `iam.serviceAccounts.signBlob` (V4 signed URLs) and `firebase.auth` custom-token creation. The Storage rules use
+  cross-service `firestore.get`; grant this when Firebase asks on the first deploy.
+
 ## 8. App Store readiness checklist (status)
 
 - [x] App icon set (1024 master, opaque)
 - [ ] Wordmark/brand assets in repo
 - [ ] Native shell (Capacitor) builds on macOS CI
 - [ ] Launch screen
-- [ ] Sign-in, account deletion in-app (5.1.1(v))
+- [x] Account deletion in-app (5.1.1(v)) — implemented, emulator/E2E test pending
 - [ ] Privacy policy URL, privacy nutrition labels, UK Children's Code DPIA
-- [ ] Parental gate before purchases/external links (1.3 / Kids)
+- [~] Parental gate — Child Mode exit implemented; still needed before purchases/external links
 - [ ] StoreKit subscriptions + restore purchases
 - [ ] Content moderation for AI text/images/video (guidelines 1.1 and 1.2)
 - [ ] Accessibility: Dynamic Type, VoiceOver labels, 44 pt targets, reduced motion
