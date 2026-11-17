@@ -385,7 +385,8 @@ export default function CreateStory() {
         excerpt: generateExcerpt(formData.content, 150),
         userId: user.uid,
         familyId: user.familyId,
-        audioUrl: audioUrl || null,
+        audioPath: audioUrl || null, // private Storage path, see /api/media/narration
+        audioUrl: null,
         imageUrl: formData.imageUrl || null,
         // Stories are never published from the client. "Publish" saves the story for
         // parental review; approval happens server-side on the review screen.

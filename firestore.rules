@@ -30,12 +30,25 @@ service cloud.firestore {
       return request.auth.uid;
     }
 
+    // Restricted Child Mode identity minted by /api/child-mode/enter (custom token claims).
+    function isChildMode() {
+      return signedIn()
+        && request.auth.token.get('dtRole', '') == 'child_mode'
+        && request.auth.token.get('familyId', '') is string
+        && request.auth.token.get('childId', '') is string;
+    }
+
+    function notChildMode() {
+      return request.auth.token.get('dtRole', '') != 'child_mode';
+    }
+
     function myProfilePath() {
       return /databases/$(database)/documents/users/$(uid());
     }
 
     function isParent() {
       return signedIn()
+        && notChildMode()
         && exists(myProfilePath())
         && get(myProfilePath()).data.role == 'parent'
         && get(myProfilePath()).data.familyId == uid();
@@ -52,7 +65,7 @@ service cloud.firestore {
 
     // Content whose change invalidates a previous parental approval.
     function reviewedContentKeys() {
-      return ['title', 'content', 'excerpt', 'audioUrl', 'imageUrl', 'childId', 'scenes', 'videoUrl'];
+      return ['title', 'content', 'excerpt', 'audioUrl', 'audioPath', 'imageUrl', 'childId', 'scenes', 'videoUrl'];
     }
 
     function clientStatus(status) {
@@ -72,13 +85,20 @@ service cloud.firestore {
     // ---------------------------------------------------------------- users
     match /users/{userId} {
       // Own profile, or a child profile that belongs to my family.
-      allow read: if signedIn() && (
+      allow read: if signedIn() && notChildMode() && (
         userId == uid()
         || (resource.data.role == 'child' && resource.data.familyId == uid())
       );
 
+      // Child Mode may read only its own child profile.
+      allow read: if isChildMode()
+        && userId == request.auth.token.childId
+        && resource.data.role == 'child'
+        && resource.data.familyId == request.auth.token.familyId;
+
       // Self-registration: parent accounts only, family = own uid.
       allow create: if signedIn()
+        && notChildMode()
         && userId == uid()
         && request.resource.data.role == 'parent'
         && request.resource.data.familyId == uid()
@@ -95,6 +115,7 @@ service cloud.firestore {
 
       // Own profile edits, never role/family/billing fields.
       allow update: if signedIn()
+        && notChildMode()
         && userId == uid()
         && !request.resource.data.diff(resource.data).affectedKeys().hasAny(serverManagedUserKeys());
 
@@ -116,10 +137,17 @@ service cloud.firestore {
     // -------------------------------------------------------------- stories
     match /stories/{storyId} {
       function ownsStory() {
-        return signedIn() && (resource.data.familyId == uid() || resource.data.userId == uid());
+        return signedIn() && notChildMode() && (resource.data.familyId == uid() || resource.data.userId == uid());
       }
 
       allow read: if ownsStory();
+
+      // Child Mode: only this family's server-approved, published stories. Queries must
+      // constrain familyId, status and isPublished (see getChildVisibleStories).
+      allow read: if isChildMode()
+        && resource.data.familyId == request.auth.token.familyId
+        && resource.data.status == 'approved'
+        && resource.data.isPublished == true;
 
       allow create: if isParent()
         && request.resource.data.userId == uid()
@@ -176,6 +204,9 @@ service cloud.firestore {
     }
 
     // Server-only: quota counters, audit trail, moderation queues, media jobs.
+    match /parentSecrets/{document=**} {
+      allow read, write: if false;
+    }
     match /usage/{document=**} {
       allow read, write: if false;
     }

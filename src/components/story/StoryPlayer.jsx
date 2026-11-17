@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { getStoryById, toggleStoryFavorite, getStoryWithAudioById } from "@/firebase/firestore";
+import { getStoryById, toggleStoryFavorite } from "@/firebase/firestore";
+import { withPlayableNarration } from "@/lib/client/media";
 import { formatTime } from "@/utils/helpers";
 import Button from "@/components/common/Button";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
@@ -35,7 +36,6 @@ export default function StoryPlayer({ storyId }) {
 
   // Setup audio
   useEffect(() => {
-    console.log("Audio URL:", story?.audioUrl);
 
     if (!story?.audioUrl) {
       console.log("No audio URL provided");
@@ -151,7 +151,7 @@ export default function StoryPlayer({ storyId }) {
           throw new Error("Story ID not provided");
         }
 
-        const storyData = await getStoryWithAudioById(storyId);
+        const storyData = await withPlayableNarration(await getStoryById(storyId));
 
         if (!storyData) {
           throw new Error("Story not found.");

@@ -46,6 +46,13 @@ export default function KidDashboardPage() {
       if (!user) return;
       
       try {
+        // Child Mode session: the profile comes from the restricted token (AuthContext).
+        if (user.childMode) {
+          setChildProfile(user);
+          setLoading(false);
+          return;
+        }
+
         // If we already have userProfile from context, use it
         if (userProfile && userProfile.role === 'child') {
           setChildProfile(userProfile);
@@ -78,6 +85,11 @@ export default function KidDashboardPage() {
 
   // Handle logout
   const handleLogout = async () => {
+    // Leaving Child Mode always goes through the server-verified Parent Gate.
+    if (user?.childMode) {
+      router.push('/kid/parent-gate');
+      return;
+    }
     try {
       await logout();
       router.push('/login');
@@ -166,7 +178,7 @@ export default function KidDashboardPage() {
           </div>
 
           {/* Kid Dashboard Component */}
-          <KidDashboard childId={childProfile.id || user.uid} />
+          <KidDashboard childId={childProfile.childId || childProfile.id || user.uid} familyId={childProfile.familyId} />
         </main>
 
         {/* 🎨 KID-FRIENDLY FOOTER */}

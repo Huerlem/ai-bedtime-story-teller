@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { adminAuth, adminDb } from './firebaseAdmin';
 import { consumeQuota } from './quota';
+import { checkFreshPassword } from '../parentGatePolicy.mjs';
 
 const MAX_AUTH_HEADER = 11000;
 
@@ -18,6 +19,12 @@ export async function verifyParent(request) {
   }
   try {
     const token = await adminAuth().verifyIdToken(header.slice(7), true);
+    // Child Mode sessions (custom tokens carrying dtRole) are never parents. A parent session
+    // restored by the Parent Gate (custom token, no dtRole) is accepted here, but privileged
+    // actions additionally require verifyFreshParent (password re-authentication).
+    if (token.dtRole) {
+      return { ok: false, response: NextResponse.json({ error: 'Parent access required' }, { status: 403 }) };
+    }
     const profile = (await adminDb().collection('users').doc(token.uid).get()).data();
     if (!profile || profile.role !== 'parent' || profile.familyId !== token.uid) {
       return { ok: false, response: NextResponse.json({ error: 'Parent access required' }, { status: 403 }) };
@@ -48,4 +55,24 @@ export async function requireParent(request, options = {}) {
     }
   }
   return null;
+}
+
+/**
+ * Parent gate for privileged actions: requires a password sign-in within the last
+ * 5 minutes (re-authentication), never a Child Mode or PIN-restored session.
+ */
+export async function verifyFreshParent(request) {
+  const result = await verifyParent(request);
+  if (!result.ok) return result;
+  const fresh = checkFreshPassword(result.token, Math.floor(Date.now() / 1000));
+  if (!fresh.ok) {
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { error: 'Please confirm your password to continue', code: 'reauth_required' },
+        { status: 401, headers: { 'Cache-Control': 'no-store' } }
+      ),
+    };
+  }
+  return result;
 }

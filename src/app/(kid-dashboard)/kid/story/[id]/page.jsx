@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { getStoryById } from '@/firebase/firestore';
+import { withPlayableNarration } from '@/lib/client/media';
 import { isChildVisible } from '@/lib/storyStatus.mjs';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 
@@ -28,9 +29,6 @@ export default function KidStoryPage({ params }) {
   useEffect(() => {
     if (story) {
       console.log('🎵 Story loaded:', story);
-      console.log('🎵 Audio URL:', story?.audioUrl);
-      console.log('🎵 Audio URL type:', typeof story?.audioUrl);
-      console.log('🎵 Audio URL length:', story?.audioUrl?.length);
     }
   }, [story]);
   
@@ -41,7 +39,7 @@ export default function KidStoryPage({ params }) {
       
       try {
         setLoading(true);
-        const storyData = await getStoryById(id);
+        const storyData = await withPlayableNarration(await getStoryById(id));
         
         
         // Redirect if story doesn't exist

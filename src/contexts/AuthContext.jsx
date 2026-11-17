@@ -6,6 +6,7 @@ import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { auth, db } from '@/firebase/firebaseConfig';
 import { loginUser, logoutUser, registerUser } from '@/firebase/auth';
+import { CHILD_MODE_ROLE } from '@/lib/parentGatePolicy.mjs';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 
 // Create context
@@ -253,7 +254,27 @@ export const AuthProvider = ({ children }) => {
             try {
                 
                 if (authUser) {
-                    console.log('📁 Getting user document from Firestore...');
+                    // Child Mode: restricted identity minted by /api/child-mode/enter. Never
+                    // create or read a parent profile for it; expose the child profile only.
+                    const tokenResult = await authUser.getIdTokenResult();
+                    if (tokenResult.claims.dtRole === CHILD_MODE_ROLE) {
+                        const { familyId, childId } = tokenResult.claims;
+                        const childDoc = await getDoc(doc(db, 'users', childId));
+                        const child = childDoc.exists() ? childDoc.data() : {};
+                        setUser({
+                            uid: authUser.uid,
+                            id: childId,
+                            childId,
+                            familyId,
+                            role: 'child',
+                            childMode: true,
+                            name: child.name || child.displayName || '',
+                            displayName: child.name || child.displayName || '',
+                            age: child.age,
+                            photoURL: child.photoURL || null,
+                        });
+                        return;
+                    }
                     const userDoc = await getDoc(doc(db, 'users', authUser.uid));
                 
                     if (userDoc.exists()) {
@@ -318,9 +339,10 @@ export const AuthProvider = ({ children }) => {
             const currentPath = window.location.pathname;
             
             // If child somehow ends up on dashboard, redirect them to home
-            if (currentPath === '/dashboard') {
-                console.log('🔄 AuthContext: Child detected on dashboard, redirecting to home');
-                router.push('/');
+            const parentArea = ['/dashboard', '/create-story', '/my-stories', '/my-children', '/settings', '/profile', '/edit-story', '/play-story', '/kid-mode'];
+            if (parentArea.some((p) => currentPath === p || currentPath.startsWith(`${p}/`))) {
+                // UX only — Firestore rules and API checks are the real boundary.
+                router.replace(user.childMode ? '/kid/dashboard' : '/');
             }
         }
     }, [user, router]);

@@ -7,7 +7,8 @@ type Story = {
   coverImage?: string;
   coverImageUrl?: string; // ✅ Campo adicional comum
   imageUrl?: string; // ✅ Outro campo possível
-  audioUrl?: string;
+  audioUrl?: string | null;
+  audioPath?: string | null;
 };
 
 type KidStoryCardProps = {
@@ -129,7 +130,7 @@ const KidStoryCard = ({ story, onClick }: KidStoryCardProps): JSX.Element => {
         )}
         
         {/* Play button overlay - só mostra se tem áudio */}
-        {story.audioUrl && (
+        {(story.audioUrl || story.audioPath) && (
           <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-20 opacity-0 hover:opacity-100 transition-opacity duration-300">
             <div className="bg-white rounded-full p-3 shadow-lg">
               <svg
@@ -149,7 +150,7 @@ const KidStoryCard = ({ story, onClick }: KidStoryCardProps): JSX.Element => {
         )}
         
         {/* ✅ NOVO: Indicador de áudio no canto */}
-        {story.audioUrl && (
+        {(story.audioUrl || story.audioPath) && (
           <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full flex items-center space-x-1">
             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.776l-4.146-3.32a1 1 0 00-.632-.224H2a1 1 0 01-1-1V7.5a1 1 0 011-1h1.605a1 1 0 00.632-.224l4.146-3.32a1 1 0 011.617.776zM14.657 5.343a1 1 0 011.414 0 9.972 9.972 0 010 14.314 1 1 0 11-1.414-1.414 7.971 7.971 0 000-11.486 1 1 0 010-1.414z" clipRule="evenodd" />
@@ -165,7 +166,7 @@ const KidStoryCard = ({ story, onClick }: KidStoryCardProps): JSX.Element => {
           {story.title}
         </h3>
         <p className="text-indigo-500 text-sm">
-          {story.audioUrl ? 'Click to listen!' : 'Click to read!'}
+          {(story.audioUrl || story.audioPath) ? 'Click to listen!' : 'Click to read!'}
         </p>
       </div>
     </div>

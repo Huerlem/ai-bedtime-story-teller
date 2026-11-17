@@ -1,6 +1,6 @@
 import { secureFetch } from '@/lib/client/secureFetch';
 import { useState } from 'react';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytes } from 'firebase/storage';
 import { storage } from '@/firebase/firebaseConfig';
 import { VOICE_OPTIONS } from '@/utils/constants';
 
@@ -124,13 +124,14 @@ const useTextToSpeech = ({ apiKey, apiEndpoint }) => {
         setProgress(90);
 
         // Get the download URL
-        const downloadURL = await getDownloadURL(storageRef);
         
         // Do not log downloadURL: it embeds a bearer token for the private file.
 
         setProgress(100);
 
-        return downloadURL;
+        // Return the private object path; playback obtains a short-lived signed URL from
+        // /api/media/narration after an authorisation check (download URLs bypass rules).
+        return storageRef.fullPath;
       } catch (storageError) {
         console.error('Storage error:', storageError);
         

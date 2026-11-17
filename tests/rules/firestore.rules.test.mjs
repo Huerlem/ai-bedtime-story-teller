@@ -44,6 +44,7 @@ beforeEach(async () => {
 });
 
 const as = (uid) => env.authenticatedContext(uid).firestore();
+const childMode = (familyId, childId) => env.authenticatedContext(`cm-${childId}`, { dtRole: 'child_mode', familyId, childId }).firestore();
 const anon = () => env.unauthenticatedContext().firestore();
 
 // --- registration & privilege escalation -------------------------------------------
@@ -142,4 +143,28 @@ test('usage counters and audit log are closed to clients', async () => {
 test('contact messages are create-only', async () => {
   await assertSucceeds(anon().collection('contactMessages').add({ name: 'N', email: 'n@example.com', message: 'Hi', status: 'new' }));
   await assertFails(anon().collection('contactMessages').get());
+});
+
+// --- Child Mode (custom-token identity with dtRole/familyId/childId claims) ---------------------
+test('Child Mode lists only its family\'s approved, published stories', async () => {
+  const db = childMode(PARENT_A, CHILD_A);
+  await assertSucceeds(db.collection('stories').where('familyId', '==', PARENT_A).where('status', '==', 'approved').where('isPublished', '==', true).get());
+  await assertSucceeds(db.doc('stories/approvedA').get());
+  await assertFails(db.doc('stories/draftA').get());
+  await assertFails(db.collection('stories').where('familyId', '==', PARENT_A).get());
+  await assertFails(childMode(PARENT_B, CHILD_B).doc('stories/approvedA').get());
+});
+
+test('Child Mode cannot write, approve or bootstrap a parent profile', async () => {
+  const db = childMode(PARENT_A, CHILD_A);
+  await assertFails(db.doc(`users/cm-${CHILD_A}`).set({ role: 'parent', familyId: `cm-${CHILD_A}` }));
+  await assertFails(db.doc('stories/approvedA').update({ isFavorite: true }));
+  await assertFails(db.doc('stories/new').set({ userId: `cm-${CHILD_A}`, familyId: `cm-${CHILD_A}`, title: 'x', content: 'y', status: 'review_required', isPublished: false }));
+  await assertFails(db.doc(`users/${PARENT_A}`).get());
+  await assertFails(db.doc(`parentSecrets/${PARENT_A}`).get());
+});
+
+test('Child Mode reads only its own child profile', async () => {
+  await assertSucceeds(childMode(PARENT_A, CHILD_A).doc(`users/${CHILD_A}`).get());
+  await assertFails(childMode(PARENT_A, CHILD_A).doc(`users/${CHILD_B}`).get());
 });

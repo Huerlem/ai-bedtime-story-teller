@@ -609,15 +609,18 @@ export async function getStoriesByChildId(childId, familyId = auth.currentUser?.
  * assigned to this child or shared with the whole family (no childId).
  *
  * @param {string} childId - Child profile ID
- * @param {string} [familyId] - Parent family ID (defaults to the signed-in uid)
+ * @param {string} familyId - Parent family ID (from Child Mode claims or the parent uid)
  * @returns {Promise<Array>} - Array of approved stories
  */
-export async function getChildVisibleStories(childId, familyId = auth.currentUser?.uid) {
+export async function getChildVisibleStories(childId, familyId) {
   if (!childId || !familyId) return [];
+  // In Child Mode the signed-in identity is cm-<childId>; familyId comes from its token
+  // claims (AuthContext). All three equality constraints are required by Firestore rules.
   const q = query(
     collection(db, 'stories'),
     where('familyId', '==', familyId),
-    where('status', '==', STORY_STATUS.APPROVED)
+    where('status', '==', STORY_STATUS.APPROVED),
+    where('isPublished', '==', true)
   );
   const snapshot = await getDocs(q);
   return sortNewestFirst(snapshot.docs

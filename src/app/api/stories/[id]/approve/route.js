@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { FieldValue } from 'firebase-admin/firestore';
-import { verifyParent } from '@/lib/server/requireParent';
+import { verifyParent, verifyFreshParent } from '@/lib/server/requireParent';
 import { adminDb } from '@/lib/server/firebaseAdmin';
 import { approvalPatch, checkApproval, withdrawalPatch } from '@/lib/storyStatus.mjs';
 
@@ -8,8 +8,8 @@ export const runtime = 'nodejs';
 const NO_STORE = { 'Cache-Control': 'no-store' };
 const ID_PATTERN = /^[A-Za-z0-9_-]{1,128}$/;
 
-async function loadStory(request, params) {
-  const auth = await verifyParent(request);
+async function loadStory(request, params, { fresh = false } = {}) {
+  const auth = fresh ? await verifyFreshParent(request) : await verifyParent(request);
   if (!auth.ok) return { response: auth.response };
   const { id } = await params;
   if (typeof id !== 'string' || !ID_PATTERN.test(id)) {
@@ -26,7 +26,8 @@ async function loadStory(request, params) {
  * This is the ONLY path that can set status=approved / isPublished=true.
  */
 export async function POST(request, { params }) {
-  const ctx = await loadStory(request, params);
+  // Approval requires a password re-authentication (a PIN-restored session is not enough).
+  const ctx = await loadStory(request, params, { fresh: true });
   if (ctx.response) return ctx.response;
   const { auth, id, ref } = ctx;
   try {

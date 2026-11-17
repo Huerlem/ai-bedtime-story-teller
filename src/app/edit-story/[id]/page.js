@@ -187,7 +187,8 @@ export default function EditStory({ params }) {
             userId: user.uid
           });
           
-          updateData.audioUrl = audioUrl;
+          updateData.audioPath = audioUrl; // private Storage path
+          updateData.audioUrl = null;
         } catch (err) {
           console.error('Error converting text to speech:', err);
           // Continue without audio if TTS fails
