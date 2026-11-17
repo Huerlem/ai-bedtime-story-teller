@@ -4,7 +4,7 @@ import { validateStoryInput } from '@/lib/storyInput.mjs';
 export const runtime = 'nodejs';
 
 export async function POST(request) {
-  const denied = await requireParent(request);
+  const denied = await requireParent(request, { quota: 'story' });
   if (denied) return denied;
   if (Number(request.headers.get('content-length')) > 16000) return NextResponse.json({error:'Request too large'}, {status:413});
   let input;

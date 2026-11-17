@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { getStoryById } from '@/firebase/firestore';
+import { isChildVisible } from '@/lib/storyStatus.mjs';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 
 /**
@@ -42,7 +43,6 @@ export default function KidStoryPage({ params }) {
         setLoading(true);
         const storyData = await getStoryById(id);
         
-        console.log('📖 Fetched story data:', storyData);
         
         // Redirect if story doesn't exist
         if (!storyData) {
@@ -51,9 +51,9 @@ export default function KidStoryPage({ params }) {
           return;
         }
         
-        // Ensure child has access to this story
-        if (user?.role === 'child' && storyData.childId !== user.uid && storyData.familyId !== user.familyId) {
-          console.warn('❌ Child does not have access to this story');
+        // Child Mode may only open stories a parent approved server-side. Firestore
+        // rules already restrict reads to the owning family.
+        if (!isChildVisible(storyData)) {
           router.push('/kid/dashboard');
           return;
         }

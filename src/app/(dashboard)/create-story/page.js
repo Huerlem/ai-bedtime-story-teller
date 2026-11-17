@@ -8,6 +8,7 @@ import useAIStoryGeneration from '@/hooks/useAIStoryGeneration';
 import useTextToSpeech from '@/hooks/useTextToSpeech';
 import useImageGeneration from '@/hooks/useImageGeneration';
 import { createStoryForChild } from '@/firebase/firestore';
+import { STORY_STATUS } from '@/lib/storyStatus.mjs';
 import { extractTitleFromText, generateExcerpt } from '@/utils/helpers';
 import { STORY_THEMES, STORY_MOODS, AGE_GROUPS, STORY_LENGTHS, VOICE_OPTIONS, API_CONFIGS } from '@/utils/constants';
 import Header from '@/components/common/Header';
@@ -80,7 +81,6 @@ export default function CreateStory() {
     setting: '',
     mood: STORY_MOODS[0],
     voice: VOICE_OPTIONS[0].id,
-    isPublished: true,
     childId: null,
     imageUrl: null,
   });
@@ -145,7 +145,6 @@ export default function CreateStory() {
         setting: '',
         mood: STORY_MOODS[0],
         voice: VOICE_OPTIONS[0].id,
-        isPublished: true,
         childId: null,
         imageUrl: null,
       });
@@ -388,7 +387,10 @@ export default function CreateStory() {
         familyId: user.familyId,
         audioUrl: audioUrl || null,
         imageUrl: formData.imageUrl || null,
-        isPublished: publish,
+        // Stories are never published from the client. "Publish" saves the story for
+        // parental review; approval happens server-side on the review screen.
+        isPublished: false,
+        status: publish ? STORY_STATUS.REVIEW_REQUIRED : STORY_STATUS.DRAFT,
         age: formData.age,
         length: formData.length,
         theme: formData.prompt,
@@ -400,7 +402,7 @@ export default function CreateStory() {
       };
   
       // Save with child ID if selected
-      await createStoryForChild(storyData, formData.childId);
+      const savedStory = await createStoryForChild(storyData, formData.childId);
   
       // FIXED: Clear user-specific draft
       if (user?.uid) {
@@ -413,7 +415,7 @@ export default function CreateStory() {
       // Redirect after success
       if (publish) {
         setTimeout(() => {
-          router.push('/my-stories');
+          router.push(`/edit-story/${savedStory.id}?review=1`);
         }, 1500);
       }
     } catch (error) {
@@ -656,7 +658,7 @@ export default function CreateStory() {
                       {ttsLoading && <span>{ttsProgress}%</span>}
                     </>
                   ) : (
-                    'Publish Story'
+                    'Review & Publish'
                   )}
                 </Button>
               </div>
@@ -872,7 +874,7 @@ export default function CreateStory() {
                         {ttsLoading && <span>{ttsProgress}%</span>}
                       </>
                     ) : (
-                      'Publish Story'
+                      'Review & Publish'
                     )}
                   </Button>
                 </div>

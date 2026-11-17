@@ -3,7 +3,7 @@ import { requireParent } from '@/lib/server/requireParent';
 export const runtime = 'nodejs';
 
 export async function POST(req) {
-  const denied = await requireParent(req);
+  const denied = await requireParent(req, { quota: 'tts' });
   if (denied) return denied;
   if (Number(req.headers.get('content-length')) > 16000) return NextResponse.json({error:'Request too large'}, {status:413});
   let body;

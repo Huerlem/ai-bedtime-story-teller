@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { getStoriesByChildId } from '@/firebase/firestore';
+import { getChildVisibleStories } from '@/firebase/firestore';
 import KidStoryCard from '@/components/common/KidStoryCard';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 
@@ -29,7 +29,7 @@ export default function KidDashboard({ childId }) {
       
       try {
         setLoading(true);
-        const childStories = await getStoriesByChildId(childId);
+        const childStories = await getChildVisibleStories(childId);
         setStories(childStories);
       } catch (err) {
         console.error('Error fetching stories:', err);

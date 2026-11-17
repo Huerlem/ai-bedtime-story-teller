@@ -4,7 +4,7 @@ import { requireParent } from '@/lib/server/requireParent';
 export const runtime = 'nodejs';
 
 export async function POST(request) {
-  const denied = await requireParent(request);
+  const denied = await requireParent(request, { quota: 'image' });
   if (denied) return denied;
   const size = Number(request.headers.get('content-length'));
   if (Number.isFinite(size) && size > 16000) return NextResponse.json({error:'Request too large'}, {status:413});

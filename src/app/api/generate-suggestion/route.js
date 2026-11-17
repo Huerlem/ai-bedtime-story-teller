@@ -7,7 +7,7 @@ const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
 export async function POST(request) {
-  const denied = await requireParent(request);
+  const denied = await requireParent(request, { quota: 'suggestion' });
   if (denied) return denied;
   const size = Number(request.headers.get('content-length'));
   if (Number.isFinite(size) && size > 16000) return NextResponse.json({error:'Request too large'}, {status:413});

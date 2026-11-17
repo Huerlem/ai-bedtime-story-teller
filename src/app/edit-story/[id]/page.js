@@ -14,6 +14,8 @@ import Button from '@/components/common/Button';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import ErrorMessage from '@/components/common/ErrorMessage';
 import SuccessMessage from '@/components/common/SuccessMessage';
+import StoryApprovalPanel from '@/components/story/StoryApprovalPanel';
+import { STORY_STATUS } from '@/lib/storyStatus.mjs';
 
 /**
  * Edit Story page component
@@ -32,7 +34,6 @@ export default function EditStory({ params }) {
     title: '',
     content: '',
     voice: '',
-    isPublished: true,
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -82,7 +83,6 @@ export default function EditStory({ params }) {
           title: storyData.title || '',
           content: storyData.content || '',
           voice: storyData.voice || VOICE_OPTIONS[0].id,
-          isPublished: storyData.isPublished !== undefined ? storyData.isPublished : true,
         });
       } catch (err) {
         console.error('Error fetching story:', err);
@@ -132,23 +132,6 @@ export default function EditStory({ params }) {
     setSaveSuccess(false);
   };
   
-  /**
-   * Handle checkbox changes
-   * 
-   * @param {Event} e - Checkbox change event
-   */
-  const handleCheckboxChange = (e) => {
-    const { name, checked } = e.target;
-    
-    setFormData(prev => ({
-      ...prev,
-      [name]: checked
-    }));
-    
-    // Clear any errors when user makes changes
-    setError(null);
-    setSaveSuccess(false);
-  };
   
   /**
    * Handle form submission
@@ -181,8 +164,18 @@ export default function EditStory({ params }) {
         title: formData.title,
         content: formData.content,
         voice: formData.voice,
-        isPublished: formData.isPublished,
       };
+
+      // Any change to reviewed content sends the story back for parental review.
+      // Firestore rules reject edits that would keep an approval on changed content.
+      const reviewedContentChanged =
+        formData.title !== (story?.title || '') ||
+        formData.content !== (story?.content || '') ||
+        regenerateAudio;
+      if (reviewedContentChanged) {
+        updateData.status = STORY_STATUS.REVIEW_REQUIRED;
+        updateData.isPublished = false;
+      }
       
       // Generate new audio if needed
       if (regenerateAudio) {
@@ -333,21 +326,18 @@ export default function EditStory({ params }) {
             </p>
           </div>
           
-          <div className="mb-6">
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                name="isPublished"
-                checked={formData.isPublished}
-                onChange={handleCheckboxChange}
-                className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-              />
-              <span className="ml-2 text-sm text-gray-700">
-                Publish this story (visible to children)
-              </span>
-            </label>
-          </div>
-          
+          <StoryApprovalPanel
+            storyId={id}
+            story={story}
+            hasUnsavedChanges={
+              formData.title !== (story?.title || '') ||
+              formData.content !== (story?.content || '') ||
+              formData.voice !== (story?.voice || formData.voice) ||
+              regenerateAudio
+            }
+            onChange={(patch) => setStory(prev => ({ ...prev, ...patch, approvedBy: patch.isPublished ? user?.uid : prev?.approvedBy }))}
+          />
+
           <div className="flex justify-end space-x-3">
             <Link href="/my-stories">
               <Button variant="secondary" type="button">
