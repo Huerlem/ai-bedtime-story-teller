@@ -109,3 +109,9 @@ test('narration is stored as a private path, not a tokenised download URL', () =
   assert.match(read('src/app/(dashboard)/create-story/page.js'), /audioPath: audioUrl \|\| null/);
   assert.match(read('src/app/api/media/narration/route.js'), /getSignedUrl\(/);
 });
+
+test('Parent Gate submits the code outside React state updaters (no double submit)', () => {
+  const ui = read('src/components/childmode/ParentGate.jsx');
+  assert.doesNotMatch(ui, /setDigits\(\(current\) => \{[^}]*submit\(/s);
+  assert.match(ui, /if \(next\.length === 4\) submit\(next\);/);
+});

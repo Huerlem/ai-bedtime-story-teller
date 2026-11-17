@@ -37,15 +37,13 @@ export default function ParentGate({ onSubmit, onBack, onForgot }) {
   }, [onSubmit]);
 
   const press = useCallback((d) => {
-    if (busy || locked) return;
+    if (busy || locked || digits.length >= 4) return;
     setError('');
-    setDigits((current) => {
-      if (current.length >= 4) return current;
-      const next = current + d;
-      if (next.length === 4) submit(next);
-      return next;
-    });
-  }, [busy, locked, submit]);
+    const next = digits + d;
+    setDigits(next);
+    // Submit outside the state updater so StrictMode cannot send the code twice.
+    if (next.length === 4) submit(next);
+  }, [busy, locked, digits, submit]);
 
   const erase = useCallback(() => { if (!busy) setDigits((c) => c.slice(0, -1)); }, [busy]);
 
