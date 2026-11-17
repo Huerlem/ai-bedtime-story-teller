@@ -26,7 +26,6 @@ export default function Register() {
     displayName: '',
     role: USER_ROLES.PARENT, // Default role is parent
     familyName: '', // Used for parent accounts to create a family
-    familyId: '' // Optional, only needed for child accounts
   });
   
   // Error and loading states
@@ -120,11 +119,6 @@ export default function Register() {
     //   return false;
     // }
     
-    // Family ID validation for child accounts
-    if (formData.role === USER_ROLES.CHILD && !formData.familyId.trim()) {
-      setError('Please enter the family ID provided by a parent.');
-      return false;
-    }
     
     return true;
   };
@@ -143,23 +137,16 @@ export default function Register() {
     }
     
     try {
-      console.log('Registering user with role:', formData.role); // Debug log
-      
-      // ✅ CORREÇÃO: Passar os parâmetros corretos baseados no role
+      // Only parent (account-holder) registration is supported. Children never
+      // hold their own credentials: parents create child profiles inside their
+      // family, and Firestore rules reject any other role or familyId.
       await register(
         formData.email,
         formData.password,
         formData.displayName,
-        formData.role, // ✅ Usar o role selecionado pelo usuário
-        formData.role === USER_ROLES.CHILD ? formData.familyId : null // ✅ Só passa familyId para crianças
+        USER_ROLES.PARENT
       );
-      
-      // ✅ CORREÇÃO: Redirecionar corretamente baseado no role
-      if (formData.role === USER_ROLES.PARENT) {
-        router.push('/dashboard');
-      } else {
-        router.push('/kid/dashboard');
-      }
+      router.push('/dashboard');
     } catch (err) {
       console.error('Registration error:', err);
       
@@ -278,42 +265,6 @@ export default function Register() {
                 )}
               </div>
               
-              <div>
-                <label htmlFor="role" className="block text-sm font-medium text-gray-700">
-                  Account Type
-                </label>
-                <div className="mt-1 grid grid-cols-2 gap-3">
-                  <div
-                    className={`cursor-pointer rounded-md border ${
-                      formData.role === USER_ROLES.PARENT
-                        ? 'bg-indigo-50 border-indigo-500'
-                        : 'border-gray-300 hover:bg-gray-50'
-                    } px-4 py-3 text-center`}
-                    onClick={() => handleChange({ target: { name: 'role', value: USER_ROLES.PARENT } })}
-                  >
-                    <span className={`text-sm font-medium ${
-                      formData.role === USER_ROLES.PARENT ? 'text-indigo-800' : 'text-gray-700'
-                    }`}>
-                      Parent
-                    </span>
-                  </div>
-                  <div
-                    className={`cursor-pointer rounded-md border ${
-                      formData.role === USER_ROLES.CHILD
-                        ? 'bg-indigo-50 border-indigo-500'
-                        : 'border-gray-300 hover:bg-gray-50'
-                    } px-4 py-3 text-center`}
-                    onClick={() => handleChange({ target: { name: 'role', value: USER_ROLES.CHILD } })}
-                  >
-                    <span className={`text-sm font-medium ${
-                      formData.role === USER_ROLES.CHILD ? 'text-indigo-800' : 'text-gray-700'
-                    }`}>
-                      Child
-                    </span>
-                  </div>
-                </div>
-              </div>
-              
               {/* Family Name field - only shown for parent accounts */}
               {formData.role === USER_ROLES.PARENT && (
                 <div>
@@ -335,27 +286,6 @@ export default function Register() {
                 </div>
               )}
               
-              {/* Family ID field - only shown for child accounts */}
-              {formData.role === USER_ROLES.CHILD && (
-                <div>
-                  <label htmlFor="familyId" className="block text-sm font-medium text-gray-700">
-                    Family ID
-                  </label>
-                  <input
-                    id="familyId"
-                    name="familyId"
-                    type="text"
-                    value={formData.familyId}
-                    onChange={handleChange}
-                    required
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder="Enter the Family ID provided by a parent"
-                  />
-                  <p className="mt-1 text-xs text-gray-500">
-                    Ask your parent for the Family ID. This links your account to your family&apos;s stories.
-                  </p>
-                </div>
-              )}
             </div>
             
             <div>

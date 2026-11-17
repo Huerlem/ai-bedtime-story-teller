@@ -8,7 +8,8 @@ type Story = {
   coverImage?: string;
   coverImageUrl?: string;
   imageUrl?: string;
-  audioUrl?: string;
+  audioUrl?: string | null;
+  audioPath?: string | null;
   isFavorite?: boolean;
   excerpt?: string;
 };
@@ -134,7 +135,7 @@ const StoryCard = ({
         )}
 
         {/* Audio indicator */}
-        {story.audioUrl && (
+        {(story.audioUrl || story.audioPath) && (
           <div className="absolute top-2 left-2">
             <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full flex items-center space-x-1">
               <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">

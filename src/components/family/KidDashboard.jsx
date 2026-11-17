@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { getStoriesByChildId } from '@/firebase/firestore';
+import { getChildVisibleStories } from '@/firebase/firestore';
 import KidStoryCard from '@/components/common/KidStoryCard';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 
@@ -14,7 +14,7 @@ import LoadingSpinner from '@/components/common/LoadingSpinner';
  * @param {string} props.childId - Child ID to show stories for
  * @returns {JSX.Element} Kid dashboard component
  */
-export default function KidDashboard({ childId }) {
+export default function KidDashboard({ childId, familyId }) {
   const { user } = useAuth();
   const router = useRouter();
   
@@ -29,7 +29,7 @@ export default function KidDashboard({ childId }) {
       
       try {
         setLoading(true);
-        const childStories = await getStoriesByChildId(childId);
+        const childStories = await getChildVisibleStories(childId, familyId);
         setStories(childStories);
       } catch (err) {
         console.error('Error fetching stories:', err);
@@ -40,7 +40,7 @@ export default function KidDashboard({ childId }) {
     }
     
     fetchStories();
-  }, [childId]);
+  }, [childId, familyId]);
   
   // Handle story click
   const handleStoryClick = (storyId) => {

@@ -1,0 +1,82 @@
+name: Dream Tales V2 — compile validation
+on:
+  push:
+    branches: [feature/dream-tales-v2]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      NEXT_PUBLIC_FIREBASE_API_KEY: 'test-non-secret'
+      NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: 'example.invalid'
+      NEXT_PUBLIC_FIREBASE_PROJECT_ID: 'dream-tales-ci'
+      NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: 'dream-tales-ci.appspot.com'
+      NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: '1234567890'
+      NEXT_PUBLIC_FIREBASE_APP_ID: '1:1234567890:web:0000000000000000000000'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install exact locked dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Dependency security gate (production, high/critical fail the build)
+        run: npm audit --omit=dev --audit-level=high
+      - name: Verify registry signatures of installed packages
+        run: npm audit signatures
+      - name: Run unit tests
+        run: npm test
+      - name: Compile Next.js production bundle
+        run: npm run build
+
+  e2e-and-visual:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      NEXT_PUBLIC_FIREBASE_API_KEY: 'demo-key'
+      NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: 'demo-dream-tales.firebaseapp.com'
+      NEXT_PUBLIC_FIREBASE_PROJECT_ID: 'demo-dream-tales'
+      NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: 'demo-dream-tales.appspot.com'
+      NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: '1234567890'
+      NEXT_PUBLIC_FIREBASE_APP_ID: '1:1234567890:web:0000000000000000000000'
+      NEXT_PUBLIC_FIREBASE_USE_EMULATORS: 'true'
+      DREAMTALES_ALLOW_EMULATORS: 'true'
+      FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099'
+      FIRESTORE_EMULATOR_HOST: '127.0.0.1:8080'
+      FIREBASE_STORAGE_EMULATOR_HOST: '127.0.0.1:9199'
+      STORAGE_EMULATOR_HOST: 'http://127.0.0.1:9199'
+      GCLOUD_PROJECT: 'demo-dream-tales'
+      DREAMTALES_QUOTA_STORY: '2'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+      - name: Install exact locked dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+      - name: Production build (emulator-connected, test-only flags)
+        run: npm run build
+      - name: End-to-end Parent–Child journeys and visual capture against Firebase Emulators
+        run: npm run test:e2e
+      - name: Emit visual QA screenshots (artifact host is not reachable from the dev sandbox)
+        if: always()
+        run: |
+          if [ -d artifacts/visual ]; then
+            for f in artifacts/visual/*.png; do echo "BEGIN_SHOT $(basename "$f")"; base64 -w 0 "$f"; echo; echo "END_SHOT"; done
+          fi

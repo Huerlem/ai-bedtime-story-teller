@@ -14,7 +14,9 @@ import {
     serverTimestamp
       
 } from 'firebase/firestore';
-import { db } from './firebaseConfig';
+import { auth, db } from './firebaseConfig';
+import { isChildVisible, STORY_STATUS } from '@/lib/storyStatus.mjs';
+import { sortChildren } from '@/lib/childOrder.mjs';
 
 /**
  * Get all stories for a specific user
@@ -51,18 +53,17 @@ export const getStoriesByUserId = async (userId) => {
 export const getStoriesByFamilyId = async (familyId) => {
     try {
         const storiesRef = collection(db, 'stories');
+        // Child-facing: only stories approved server-side by the parent.
         const q = query(
             storiesRef, 
             where('familyId', '==', familyId),
-            where('isPublished', '==', true),
-            orderBy('createdAt', 'desc')
+            where('status', '==', STORY_STATUS.APPROVED)
         );
         
         const querySnapshot = await getDocs(q);
-        return querySnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        }));
+        return sortNewestFirst(querySnapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data() }))
+            .filter(isChildVisible));
     } catch (error) {
         console.error('Error getting family stories:', error);
         throw error;
@@ -388,25 +389,6 @@ export const getRecentStories = async (userId, limitCount = 5) => {
 };
 
 /**
- * Publish or unpublish a story
- * 
- * @param {string} storyId - ID of story to update
- * @param {boolean} isPublished - New published status
- * @returns {Promise<void>}
- */
-export const setStoryPublishStatus = async (storyId, isPublished) => {
-    try {
-        await updateDoc(doc(db, 'stories', storyId), { 
-            isPublished, 
-            updatedAt: serverTimestamp() 
-        });
-    } catch (error) {
-        console.error('Error updating story publish status:', error);
-        throw error;
-    }
-};
-
-/**
  * Get audio document for a specific story
  * @param {string} storyId - The story ID to find the audio for
  * @returns {Promise<Object|null>} Audio data or null
@@ -489,10 +471,10 @@ export async function getChildAccounts(familyId) {
     
     const querySnapshot = await getDocs(q);
     
-    return querySnapshot.docs.map(doc => ({
+    return sortChildren(querySnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
-    }));
+    })));
   } catch (error) {
     console.error('Error getting child accounts:', error);
     throw error;
@@ -605,124 +587,49 @@ export async function createStoryForChild(storyData, childId = null) {
 }
 
 /**
- * Get stories by child ID - VERSÃO SIMPLIFICADA (sem índices compostos)
- * 
- * @param {string} childId - Child account ID
+ * Parent view: every story (any status) assigned to one child of the signed-in
+ * parent's family. The familyId constraint is required by Firestore rules.
+ *
+ * @param {string} childId - Child profile ID
+ * @param {string} [familyId] - Parent family ID (defaults to the signed-in uid)
  * @returns {Promise<Array>} - Array of stories
  */
-export async function getStoriesByChildId(childId) {
-  try {
-    console.log('🔍 getStoriesByChildId called with:', childId);
-    
-    // Buscar perfil da criança para obter familyId
-    const childProfile = await getUserProfile(childId);
-    console.log('👶 Child profile:', childProfile);
-    
-    if (!childProfile) {
-      console.warn('❌ Child profile not found for ID:', childId);
-      return [];
-    }
-    
-    const familyId = childProfile.familyId;
-    console.log('👨‍👩‍👧‍👦 Family ID:', familyId);
-    
-    const storiesRef = collection(db, 'stories');
-    
-    // 🔍 QUERY 1: Histórias por childId (sem orderBy para evitar índice)
-    const directQuery = query(
-      storiesRef,
-      where('childId', '==', childId),
-      where('isPublished', '==', true)
-    );
-    
-    // 🔍 QUERY 2: Histórias da família (sem orderBy para evitar índice)
-    const familyQuery = query(
-      storiesRef,
-      where('familyId', '==', familyId),
-      where('isPublished', '==', true)
-    );
-    
-    console.log('🔍 Executing simplified queries...');
-    
-    const [directSnapshot, familySnapshot] = await Promise.all([
-      getDocs(directQuery),
-      getDocs(familyQuery)
-    ]);
-    
-    console.log('📊 Direct stories found:', directSnapshot.size);
-    console.log('📊 Family stories found:', familySnapshot.size);
-    
-    // Combinar e remover duplicatas
-    const allStories = new Map();
-    
-    // Adicionar histórias diretas
-    directSnapshot.docs.forEach(doc => {
-      const story = { id: doc.id, ...doc.data(), source: 'direct' };
-      allStories.set(doc.id, story);
-      console.log('📖 Direct story:', story.title);
-    });
-    
-    // Adicionar histórias da família
-    familySnapshot.docs.forEach(doc => {
-      if (!allStories.has(doc.id)) {
-        const story = { id: doc.id, ...doc.data(), source: 'family' };
-        allStories.set(doc.id, story);
-        console.log('📖 Family story:', story.title);
-      }
-    });
-    
-    // Converter para array e ordenar por data (lado cliente)
-    const result = Array.from(allStories.values())
-      .filter(story => story.isPublished === true) // Filtro extra de segurança
-      .sort((a, b) => {
-        const dateA = a.createdAt?.toDate?.() || new Date(a.createdAt) || new Date(0);
-        const dateB = b.createdAt?.toDate?.() || new Date(b.createdAt) || new Date(0);
-        return dateB - dateA; // Mais recente primeiro
-      });
-    
-    console.log('📚 Total unique stories:', result.length);
-    console.log('📚 Final stories:', result.map(s => ({ 
-      id: s.id, 
-      title: s.title, 
-      source: s.source,
-      isPublished: s.isPublished 
-    })));
-    
-    return result;
-    
-  } catch (error) {
-    console.error('❌ Error in getStoriesByChildId:', error);
-    
-    // 🔄 FALLBACK: Busca mais simples ainda
-    try {
-      console.log('🔄 Trying simplest fallback query...');
-      
-      const storiesRef = collection(db, 'stories');
-      const fallbackQuery = query(
-        storiesRef,
-        where('childId', '==', childId)
-      );
-      
-      const snapshot = await getDocs(fallbackQuery);
-      const fallbackResult = snapshot.docs
-        .map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          source: 'fallback'
-        }))
-        .filter(story => story.isPublished === true) // Filtrar só publicadas
-        .sort((a, b) => {
-          const dateA = a.createdAt?.toDate?.() || new Date(a.createdAt) || new Date(0);
-          const dateB = b.createdAt?.toDate?.() || new Date(b.createdAt) || new Date(0);
-          return dateB - dateA;
-        });
-      
-      console.log('🔄 Fallback found:', fallbackResult.length, 'published stories');
-      return fallbackResult;
-      
-    } catch (fallbackError) {
-      console.error('❌ Fallback also failed:', fallbackError);
-      throw error;
-    }
-  }
+export async function getStoriesByChildId(childId, familyId = auth.currentUser?.uid) {
+  if (!childId || !familyId) return [];
+  const q = query(
+    collection(db, 'stories'),
+    where('familyId', '==', familyId),
+    where('childId', '==', childId)
+  );
+  const snapshot = await getDocs(q);
+  return sortNewestFirst(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+}
+
+/**
+ * Child Mode library: only stories a parent has approved server-side, either
+ * assigned to this child or shared with the whole family (no childId).
+ *
+ * @param {string} childId - Child profile ID
+ * @param {string} familyId - Parent family ID (from Child Mode claims or the parent uid)
+ * @returns {Promise<Array>} - Array of approved stories
+ */
+export async function getChildVisibleStories(childId, familyId) {
+  if (!childId || !familyId) return [];
+  // In Child Mode the signed-in identity is cm-<childId>; familyId comes from its token
+  // claims (AuthContext). All three equality constraints are required by Firestore rules.
+  const q = query(
+    collection(db, 'stories'),
+    where('familyId', '==', familyId),
+    where('status', '==', STORY_STATUS.APPROVED),
+    where('isPublished', '==', true)
+  );
+  const snapshot = await getDocs(q);
+  return sortNewestFirst(snapshot.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .filter(story => isChildVisible(story) && (!story.childId || story.childId === childId)));
+}
+
+function sortNewestFirst(stories) {
+  const time = (value) => value?.toDate?.()?.getTime?.() ?? (value ? new Date(value).getTime() : 0) ?? 0;
+  return stories.sort((a, b) => time(b.createdAt) - time(a.createdAt));
 }

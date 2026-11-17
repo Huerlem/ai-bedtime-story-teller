@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+/* Nunito is self-hosted by next/font (src/app/layout.js); no third-party font requests. */
 
 @tailwind base;
 @tailwind components;
@@ -6,7 +6,7 @@
 
 @layer base {
   html {
-    font-family: 'Poppins', system-ui, sans-serif;
+    font-family: var(--font-nunito), ui-rounded, system-ui, -apple-system, sans-serif;
   }
 
   h1 {

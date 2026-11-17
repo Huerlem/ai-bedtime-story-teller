@@ -1,0 +1,15 @@
+node_modules/
+.next/
+out/
+coverage/
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.p8
+service-account*.json
+firebase-adminsdk*.json
+.DS_Store
+*.log
+tsconfig.tsbuildinfo

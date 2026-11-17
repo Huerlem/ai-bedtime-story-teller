@@ -3,10 +3,14 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { auth, db } from '@/firebase/firebaseConfig';
 import { loginUser, logoutUser, registerUser } from '@/firebase/auth';
+import { CHILD_MODE_ROLE } from '@/lib/parentGatePolicy.mjs';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
+
+// Routes that only a parent account may render.
+const PARENT_AREA = ['/dashboard', '/create-story', '/my-stories', '/my-children', '/settings', '/profile', '/edit-story', '/play-story', '/kid-mode', '/ChildProfileManager'];
 
 // Create context
 const AuthContext = createContext();
@@ -71,9 +75,8 @@ export const AuthProvider = ({ children }) => {
         try {
             await logoutUser();
             
-            // Remove cookie
+            // Clear any legacy role cookie written by older builds.
             document.cookie = 'user=;Max-Age=0; path=/';
-            console.log('🍪 Cookie removed due to inactivity');
             
             // Clear user state
             setUser(null);
@@ -152,11 +155,6 @@ export const AuthProvider = ({ children }) => {
                         ...userData
                     };
                     
-                    console.log('🔍 REFRESH DEBUG:');
-                    console.log('- Firebase Auth User:', auth.currentUser);
-                    console.log('- Firestore Document Data:', userData);
-                    console.log('- Combined User Data:', updatedUserData);
-                    console.log('- User Role:', updatedUserData.role);
                     
                     setUser(updatedUserData);
                     console.log('✅ User data refreshed successfully');
@@ -172,10 +170,9 @@ export const AuthProvider = ({ children }) => {
     };
 
     // Register a new user
-    const register = async (email, password, displayName, role, familyId) => {
+    const register = async (email, password, displayName) => {
         try {
-            console.log('📝 Registering user:', { email, displayName, role, familyId });
-            const newUser = await registerUser(email, password, displayName, role, familyId);
+            const newUser = await registerUser(email, password, displayName);
             return newUser;
         } catch (error) {
             console.error('❌ Register error:', error);
@@ -186,23 +183,11 @@ export const AuthProvider = ({ children }) => {
     // Log in a user
     const login = async (email, password) => {
         try {
-            console.log('🔐 Logging in user:', email);
             const user = await loginUser(email, password);
 
-            console.log('🔍 LOGIN FUNCTION DEBUG:');
-            console.log('- loginUser() returned:', user);
-            console.log('- User role from login:', user?.role);
-            console.log('- User email:', user?.email);
-            console.log('- User UID:', user?.uid);
-
-            // Save cookie
-            document.cookie = `user=${JSON.stringify({
-                role: user.role,
-                email: user.email,
-            })}; path=/`;
-            
-            console.log('🍪 Cookie saved with role:', user.role);
-            
+            // No role cookie is written: routing hints from the browser are never an
+            // authorization boundary. Server routes verify Firebase ID tokens and
+            // Firestore/Storage rules enforce family ownership.
             return user;
         } catch (error) {
             console.error('❌ Login error:', error);
@@ -221,9 +206,8 @@ export const AuthProvider = ({ children }) => {
             
             await logoutUser();
 
-            // Remove cookie
+            // Clear any legacy role cookie written by older builds.
             document.cookie = 'user=;Max-Age=0; path=/';
-            console.log('🍪 Cookie removed');
             
             router.push('/login');
         } catch (error) {
@@ -270,11 +254,33 @@ export const AuthProvider = ({ children }) => {
     // Listen for auth state changes
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
+            // Identity is changing (sign-in, Child Mode entry/exit, sign-out): hold rendering
+            // until the new user is resolved so no page acts on the previous identity.
+            setLoading(true);
             try {
-                console.log('🔍 AUTH STATE CHANGED:', authUser?.email || 'No user');
                 
                 if (authUser) {
-                    console.log('📁 Getting user document from Firestore...');
+                    // Child Mode: restricted identity minted by /api/child-mode/enter. Never
+                    // create or read a parent profile for it; expose the child profile only.
+                    const tokenResult = await authUser.getIdTokenResult();
+                    if (tokenResult.claims.dtRole === CHILD_MODE_ROLE) {
+                        const { familyId, childId } = tokenResult.claims;
+                        const childDoc = await getDoc(doc(db, 'users', childId));
+                        const child = childDoc.exists() ? childDoc.data() : {};
+                        setUser({
+                            uid: authUser.uid,
+                            id: childId,
+                            childId,
+                            familyId,
+                            role: 'child',
+                            childMode: true,
+                            name: child.name || child.displayName || '',
+                            displayName: child.name || child.displayName || '',
+                            age: child.age,
+                            photoURL: child.photoURL || null,
+                        });
+                        return;
+                    }
                     const userDoc = await getDoc(doc(db, 'users', authUser.uid));
                 
                     if (userDoc.exists()) {
@@ -287,17 +293,8 @@ export const AuthProvider = ({ children }) => {
                             ...firestoreData
                         };
                         
-                        console.log('🔍 AUTH STATE DEBUG:');
-                        console.log('- Firebase Auth User UID:', authUser.uid);
-                        console.log('- Firebase Auth Email:', authUser.email);
-                        console.log('- Firestore Document Exists:', userDoc.exists());
-                        console.log('- Raw Firestore Data:', firestoreData);
-                        console.log('- Firestore Role Field:', firestoreData.role);
-                        console.log('- Combined User Data:', combinedUserData);
-                        console.log('- Final Role Value:', combinedUserData.role);
                         
                         setUser(combinedUserData);
-                        console.log('✅ User authenticated and data loaded:', combinedUserData.displayName || combinedUserData.email);
                     } else {
                         console.warn('⚠️ User exists in Auth but not in Firestore - creating default document');
                         const defaultData = {
@@ -316,7 +313,6 @@ export const AuthProvider = ({ children }) => {
                             ...defaultData
                         };
                         
-                        console.log('📝 Created default user document:', newUserData);
                         setUser(newUserData);
                     }
                 } else {
@@ -344,17 +340,14 @@ export const AuthProvider = ({ children }) => {
         };
     }, [clearIdleTimers]);
 
+    // Child Mode must never mount parent-area pages: block rendering and redirect before any
+    // parent page effect runs. UX layer only — Firestore rules and API checks are the boundary.
+    const pathname = usePathname() || '';
+    const inParentArea = PARENT_AREA.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+    const childBlocked = user?.role === 'child' && inParentArea;
     useEffect(() => {
-        if (typeof window !== 'undefined' && user?.role === 'child') {
-            const currentPath = window.location.pathname;
-            
-            // If child somehow ends up on dashboard, redirect them to home
-            if (currentPath === '/dashboard') {
-                console.log('🔄 AuthContext: Child detected on dashboard, redirecting to home');
-                router.push('/');
-            }
-        }
-    }, [user, router]);
+        if (childBlocked) router.replace(user?.childMode ? '/kid/dashboard' : '/');
+    }, [childBlocked, user, router]);
 
     // Provide authentication context value
     const value = {
@@ -370,7 +363,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     // Show loading screen while initializing
-    if (loading) {
+    if (loading || childBlocked) {
         return <LoadingSpinner fullScreen message="Loading..." />;
     }
 

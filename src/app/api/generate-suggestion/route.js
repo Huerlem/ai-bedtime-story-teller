@@ -1,10 +1,16 @@
 
 import { NextResponse } from 'next/server';
+import { requireParent } from '@/lib/server/requireParent';
+export const runtime = 'nodejs';
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
 export async function POST(request) {
+  const denied = await requireParent(request, { quota: 'suggestion' });
+  if (denied) return denied;
+  const size = Number(request.headers.get('content-length'));
+  if (Number.isFinite(size) && size > 16000) return NextResponse.json({error:'Request too large'}, {status:413});
   try {
     if (!GROQ_API_KEY) {
       return NextResponse.json(
@@ -14,7 +20,8 @@ export async function POST(request) {
     }
 
     const body = await request.json();
-    const { currentText } = body;
+    const { currentText } = body || {};
+    if (typeof currentText !== 'string' || currentText.length > 10000) return NextResponse.json({error:'Invalid story text'}, {status:400});
 
     if (!currentText?.trim()) {
       return NextResponse.json(

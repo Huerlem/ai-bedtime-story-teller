@@ -1,5 +1,6 @@
+import { secureFetch } from '@/lib/client/secureFetch';
 import { useState } from 'react';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytes } from 'firebase/storage';
 import { storage } from '@/firebase/firebaseConfig';
 import { VOICE_OPTIONS } from '@/utils/constants';
 
@@ -57,7 +58,7 @@ const useTextToSpeech = ({ apiKey, apiEndpoint }) => {
 
       // Instead of using the external API directly, use our API route 
       // This will handle the API key and credentials securely on the server side
-      const response = await fetch('/api/tts', {
+      const response = await secureFetch('/api/tts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -111,11 +112,9 @@ const useTextToSpeech = ({ apiKey, apiEndpoint }) => {
         // Create a reference to the specific path in Firebase Storage
         const storageRef = ref(storage, `audio/${userId}/${storyId}.mp3`);
         
-        // Log the storage path for debugging
-        console.log(`Uploading to storage path: audio/${userId}/${storyId}.mp3`);
-        
         // Upload the file with metadata that includes the user's ID
         await uploadBytes(storageRef, blob, {
+          contentType: 'audio/mpeg',
           customMetadata: {
             userId: userId,
             storyId: storyId
@@ -125,45 +124,18 @@ const useTextToSpeech = ({ apiKey, apiEndpoint }) => {
         setProgress(90);
 
         // Get the download URL
-        const downloadURL = await getDownloadURL(storageRef);
         
-        console.log('Successfully uploaded and got download URL:', downloadURL);
+        // Do not log downloadURL: it embeds a bearer token for the private file.
 
         setProgress(100);
 
-        return downloadURL;
+        // Return the private object path; playback obtains a short-lived signed URL from
+        // /api/media/narration after an authorisation check (download URLs bypass rules).
+        return storageRef.fullPath;
       } catch (storageError) {
         console.error('Storage error:', storageError);
         
-        // If we have storage permission issues, try to use the server API again
-        // This is a fallback approach
-        try {
-          console.log('Attempting fallback to server-side storage...');
-          
-          // Call a server endpoint that can write to Firebase with admin privileges
-          const serverResponse = await fetch('/api/upload-audio', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              audioContent: audioContent,
-              userId: userId,
-              storyId: storyId
-            })
-          });
-          
-          if (!serverResponse.ok) {
-            throw new Error(`Server upload failed: ${serverResponse.status}`);
-          }
-          
-          const data = await serverResponse.json();
-          console.log('Successfully uploaded via server side:', data.downloadURL);
-          return data.downloadURL;
-        } catch (serverError) {
-          console.error('Server upload fallback error:', serverError);
-          throw new Error('Failed to upload audio after multiple attempts');
-        }
+        throw storageError;
       }
     } catch (err) {
       console.error('Error converting text to speech:', err);

@@ -1,3 +1,4 @@
+import { secureFetch } from '@/lib/client/secureFetch';
 import { useState } from 'react';
 
 /**
@@ -35,7 +36,7 @@ const useAIStoryGeneration = () => {
             console.log('Gerando história com parâmetros:', { prompt, age, length, characters, setting, mood });
 
             // Fazer requisição para nossa API local (que conecta com Groq)
-            const response = await fetch('/api/generate-story', {
+            const response = await secureFetch('/api/generate-story', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -106,7 +107,7 @@ const useAIStoryGeneration = () => {
             console.log('Gerando título para a história...');
 
             // Fazer requisição para nossa API local de título
-            const response = await fetch('/api/generate-title', {
+            const response = await secureFetch('/api/generate-title', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -167,7 +168,7 @@ const useAIStoryGeneration = () => {
             }
 
             // Fazer requisição para nossa API local de sugestão
-            const response = await fetch('/api/generate-suggestion', {
+            const response = await secureFetch('/api/generate-suggestion', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
